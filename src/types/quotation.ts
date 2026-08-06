@@ -41,8 +41,8 @@ export interface Buyer {
   name: string;
   address: string;
   gstin?: string;
-  email?: string;
   phone?: string;
+  contactPerson?: string;
 }
 
 export interface BankDetails {
@@ -70,6 +70,7 @@ export interface QuotationFormData {
   dispatchedThrough?: string;
   destination?: string;
   termsOfDelivery?: string;
+  logoPath?: string;
 }
 
 export interface HSNBreakupRow {

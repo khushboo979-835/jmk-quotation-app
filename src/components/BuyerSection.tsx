@@ -3,7 +3,7 @@ import { Buyer, TaxType } from '../types/quotation';
 import { 
   Building2, 
   Phone, 
-  Mail, 
+  User, 
   MapPin, 
   Loader2, 
   CheckCircle2, 
@@ -53,8 +53,8 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
           name: companyName,
           address: formattedAddress,
           gstin: cleanGst,
-          email: data.email || buyer.email || '',
           phone: data.phone || buyer.phone || '',
+          contactPerson: buyer.contactPerson || '',
         });
 
         // Auto-set Tax Mode based on State Code
@@ -167,46 +167,45 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
           </div>
         </div>
 
-        {/* Phone */}
+        {/* Contact Person Name */}
         <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Phone Number (Optional)</label>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Contact Person Name</label>
+          <div className="relative">
+            <User className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+            <input
+              placeholder="e.g. Rahul Singh"
+              value={buyer.contactPerson || ''}
+              onChange={(e) => onChangeBuyer({ ...buyer, contactPerson: e.target.value })}
+              className="pl-9 pr-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+            />
+          </div>
+        </div>
+
+        {/* Mobile / Phone Number */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Mobile / Phone Number</label>
           <div className="relative">
             <Phone className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
             <input
-              placeholder="e.g. +91 98765 43210"
+              placeholder="e.g. +91 74939 16194"
               value={buyer.phone || ''}
               onChange={(e) => onChangeBuyer({ ...buyer, phone: e.target.value })}
-              className="pl-9 pr-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="pl-9 pr-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
             />
           </div>
         </div>
 
-        {/* Email */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Email Address (Optional)</label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-            <input
-              type="email"
-              placeholder="e.g. procurement@buyer.com"
-              value={buyer.email || ''}
-              onChange={(e) => onChangeBuyer({ ...buyer, email: e.target.value })}
-              className="pl-9 pr-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-            />
-          </div>
-        </div>
-
-        {/* Billing Address Textarea */}
+        {/* Full Billing & Delivery Address */}
         <div className="md:col-span-2">
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Billing Address *</label>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Full Billing & Delivery Address *</label>
           <div className="relative">
             <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
             <textarea
               placeholder="Full billing and shipping address with state name and pincode..."
-              rows={2}
+              rows={3}
               value={buyer.address}
               onChange={(e) => onChangeBuyer({ ...buyer, address: e.target.value })}
-              className="pl-9 pr-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none font-sans"
+              className="pl-9 pr-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none font-sans bg-white"
             />
           </div>
         </div>
