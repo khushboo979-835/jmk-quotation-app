@@ -28,7 +28,7 @@ export default function HeaderSection({
             <img 
               src={logoUrl} 
               alt={`${companyName} Logo`} 
-              className="h-16 w-16 md:h-20 md:w-20 rounded-full object-cover border-2 border-blue-400/50 group-hover:border-blue-400 group-hover:scale-105 transition-all duration-300 shadow-lg relative z-10"
+              className="h-24 w-24 md:h-28 md:w-28 rounded-full object-contain bg-white p-1 border-2 border-blue-400/70 group-hover:border-blue-400 group-hover:scale-105 transition-all duration-300 shadow-lg relative z-10"
             />
           </a>
           
