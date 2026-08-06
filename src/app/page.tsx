@@ -27,7 +27,7 @@ const generateId = () => Math.random().toString(36).slice(2, 9);
 export default function Home() {
   const [quotationNumber, setQuotationNumber] = useState(`Q-${new Date().getFullYear()}-001`);
   const [quotationDate, setQuotationDate] = useState(new Date().toISOString().split('T')[0]);
-  const [buyer, setBuyer] = useState<Buyer>({ name: '', address: '', gstin: '', email: '', phone: '' });
+  const [buyer, setBuyer] = useState<Buyer>({ name: '', address: '', gstin: '', phone: '', contactPerson: '' });
   const [items, setItems] = useState<QuotationItem[]>([]);
   const [taxType, setTaxType] = useState<TaxType>('igst');
   const [bankDetails] = useState({ bankName: 'HDFC Bank', accountNumber: '50200100070241', ifsc: 'HDFC0004927' });

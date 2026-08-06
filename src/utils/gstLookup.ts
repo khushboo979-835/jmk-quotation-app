@@ -1,43 +1,6 @@
-export const STATE_CODES: Record<string, string> = {
-  '01': 'Jammu & Kashmir',
-  '02': 'Himachal Pradesh',
-  '03': 'Punjab',
-  '04': 'Chandigarh',
-  '05': 'Uttarakhand',
-  '06': 'Haryana',
-  '07': 'Delhi',
-  '08': 'Rajasthan',
-  '09': 'Uttar Pradesh',
-  '10': 'Bihar',
-  '11': 'Sikkim',
-  '12': 'Arunachal Pradesh',
-  '13': 'Nagaland',
-  '14': 'Manipur',
-  '15': 'Mizoram',
-  '16': 'Tripura',
-  '17': 'Meghalaya',
-  '18': 'Assam',
-  '19': 'West Bengal',
-  '20': 'Jharkhand',
-  '21': 'Odisha',
-  '22': 'Chhattisgarh',
-  '23': 'Madhya Pradesh',
-  '24': 'Gujarat',
-  '25': 'Daman & Diu',
-  '26': 'Dadra & Nagar Haveli',
-  '27': 'Maharashtra',
-  '28': 'Andhra Pradesh',
-  '29': 'Karnataka',
-  '30': 'Goa',
-  '31': 'Lakshadweep',
-  '32': 'Kerala',
-  '33': 'Tamil Nadu',
-  '34': 'Puducherry',
-  '35': 'Andaman & Nicobar Islands',
-  '36': 'Telangana',
-  '37': 'Andhra Pradesh (New)',
-  '38': 'Ladakh'
-};
+import { GST_STATE_CODES } from './gstStateCodes';
+
+export const STATE_CODES = GST_STATE_CODES;
 
 // State capitals and typical pincodes for dynamic address generation
 export const STATE_CITY_MAPPING: Record<string, { city: string; pincode: string }> = {
@@ -82,7 +45,7 @@ export const STATE_CITY_MAPPING: Record<string, { city: string; pincode: string 
 };
 
 // Predefined database of specific test GSTINs for precise lookup
-export const GSTIN_DB: Record<string, { tradeName: string; legalName: string; building: string; street: string; location: string; pincode: string; phone: string; email: string }> = {
+export const GSTIN_DB: Record<string, { tradeName: string; legalName: string; building: string; street: string; location: string; pincode: string; phone: string }> = {
   '10AAACJ3919M1Z8': {
     tradeName: 'Maurya Scaffolding & Construction',
     legalName: 'Maurya Scaffolding & Construction Private Limited',
@@ -90,8 +53,7 @@ export const GSTIN_DB: Record<string, { tradeName: string; legalName: string; bu
     street: 'Road No. 4',
     location: 'Patna',
     pincode: '800013',
-    phone: '+91 7493916194',
-    email: 'contact@mauryascaffolding.com'
+    phone: '+91 7493916194'
   },
   '21ABCDE5555F1Z4': {
     tradeName: 'Kalinga Steel & Infrastructure',
@@ -100,8 +62,7 @@ export const GSTIN_DB: Record<string, { tradeName: string; legalName: string; bu
     street: 'Infocity Road',
     location: 'Bhubaneswar',
     pincode: '751024',
-    phone: '+91 9437012345',
-    email: 'procurement@kalingasteel.com'
+    phone: '+91 9437012345'
   },
   '27GHIJK9999L2Z9': {
     tradeName: 'Sahyadri Engineering Solutions',
@@ -110,8 +71,7 @@ export const GSTIN_DB: Record<string, { tradeName: string; legalName: string; bu
     street: 'Thane-Belapur Road',
     location: 'Navi Mumbai',
     pincode: '400705',
-    phone: '+91 22 27789012',
-    email: 'info@sahyadrieng.co.in'
+    phone: '+91 22 27789012'
   },
   '07XYZAB1111C1Z0': {
     tradeName: 'Apex Scaffolding & Formwork Delhi',
@@ -120,8 +80,7 @@ export const GSTIN_DB: Record<string, { tradeName: string; legalName: string; bu
     street: 'Phase III',
     location: 'New Delhi',
     pincode: '110020',
-    phone: '+91 11 41607890',
-    email: 'sales@apexscaffolding.in'
+    phone: '+91 11 41607890'
   },
   '21AAACU2227J1ZQ': {
     tradeName: 'UMSL Limited',
@@ -130,8 +89,7 @@ export const GSTIN_DB: Record<string, { tradeName: string; legalName: string; bu
     street: 'KAPALESWAR CHOUDWAR',
     location: 'Cuttack',
     pincode: '754025',
-    phone: '+91 671 2309876',
-    email: 'contact@umsl.in'
+    phone: '+91 671 2309876'
   }
 };
 
@@ -165,6 +123,8 @@ export function lookupGSTINDetails(gstinVal: string) {
   const stateInfo = getStateFromGSTIN(gstin);
   if (!stateInfo) return null;
 
+  const pan = gstin.substring(2, 12);
+
   // 1. Check if in DB
   let details = GSTIN_DB[gstin];
 
@@ -193,8 +153,6 @@ export function lookupGSTINDetails(gstinVal: string) {
       numericSequence += '7';
     }
     const phone = `+91 9${numericSequence.substring(0, 9)}`;
-    const emailName = tradeName.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const email = `contact@${emailName}.com`;
 
     // Dynamic address structure
     const plotNo = parseInt(panDigits, 10) % 500 || 124;
@@ -207,8 +165,7 @@ export function lookupGSTINDetails(gstinVal: string) {
       street: 'Industrial Development Area Road',
       location: mapping.city,
       pincode: mapping.pincode,
-      phone,
-      email
+      phone
     };
   }
 
@@ -219,8 +176,8 @@ export function lookupGSTINDetails(gstinVal: string) {
     tradeName: details.tradeName,
     legalName: details.legalName,
     gstin,
+    pan,
     phone: details.phone,
-    email: details.email,
     address: {
       building: details.building,
       street: details.street,

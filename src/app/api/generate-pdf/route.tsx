@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import QuotationPDF from '../../../components/QuotationPDF';
 import { QuotationFormData } from '../../../types/quotation';
+import path from 'path';
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,10 +38,13 @@ export async function POST(req: NextRequest) {
       ? (stateCode === '10' ? 'local' : 'igst')
       : (data.taxType || 'local');
 
+    const logoPath = path.join(process.cwd(), 'public', 'jmk-logo.png');
+
     const payload = { 
       ...data, 
       items,
-      taxType: determinedTaxType 
+      taxType: determinedTaxType,
+      logoPath
     } as QuotationFormData;
 
     // Render PDF to buffer using @react-pdf/renderer

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Link, Svg, Path, Rect, Circle } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Link, Svg, Path, Rect, Circle, Image } from '@react-pdf/renderer';
 import { QuotationFormData } from '../types/quotation';
 import { 
   calculateSubtotal, 
@@ -322,7 +322,8 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
     deliveryNoteDate,
     dispatchedThrough,
     destination,
-    termsOfDelivery
+    termsOfDelivery,
+    logoPath
   } = data;
 
   const subtotal = calculateSubtotal(items);
@@ -345,39 +346,26 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
               {/* Company details with SVG logo */}
               <View style={styles.companyBlock}>
                 <View style={styles.logoBlock}>
-                  <Svg width="50" height="40" viewBox="0 0 100 80">
-                    {/* Base house shape */}
-                    <Path d="M 20 45 L 50 18 L 80 45" fill="none" stroke="#1d4ed8" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-                    <Path d="M 28 42 L 28 75 L 72 75 L 72 42" fill="none" stroke="#1e3a8a" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-                    
-                    {/* Door */}
-                    <Rect x="43" y="55" width="14" height="20" fill="#1d4ed8" />
-                    
-                    {/* Windows */}
-                    <Rect x="36" y="32" width="10" height="10" fill="#1d4ed8" stroke="#ffffff" strokeWidth="1" />
-                    <Rect x="54" y="32" width="10" height="10" fill="#1d4ed8" stroke="#ffffff" strokeWidth="1" />
-
-                    {/* Gear icon on roof line */}
-                    <Circle cx="72" cy="22" r="10" fill="#ffffff" stroke="#1e3a8a" strokeWidth="3" />
-                    <Path d="M 72 8 L 72 12 M 72 32 L 72 36 M 58 22 L 62 22 M 82 22 L 86 22 M 62 12 L 65 15 M 79 29 L 82 32 M 62 32 L 65 29 M 79 15 L 82 12" stroke="#1e3a8a" strokeWidth="3" strokeLinecap="round" />
-                    <Circle cx="72" cy="22" r="5" fill="#1e3a8a" />
-                  </Svg>
-                  <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 10, color: '#1e3a8a', marginTop: 1, letterSpacing: 0.5 }}>JMK</Text>
-                  <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 4.8, color: '#4b5563', marginTop: 1, letterSpacing: 0.2 }}>ENGINEERING</Text>
-                  <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 4.8, color: '#4b5563', letterSpacing: 0.2 }}>& DEVELOPER</Text>
+                  {logoPath ? (
+                    <Image src={logoPath} style={{ width: 52, height: 52, borderRadius: 26 }} />
+                  ) : (
+                    <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: '#cbd5e1', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#475569' }}>JMK</Text>
+                    </View>
+                  )}
                 </View>
                 
                 <View style={styles.companyDetailsBlock}>
                   <Link src="https://www.indiamart.com/jmkengineeringdevelopers/" style={styles.companyName}>
                     JMK ENGINEERING & DEVELOPER
                   </Link>
-                  <Text style={styles.companyText}>MAUZA JHALI, CIRCLE KANKARBAGH</Text>
-                  <Text style={styles.companyText}>50B,WARD 55 P.NO-2167078,</Text>
-                  <Text style={styles.companyText}>JAKARIYAPUR, TRINITY GLOBAL SCHOOL,</Text>
-                  <Text style={styles.companyText}>ROAD NO 3, KRISHNA NIKETAN ROAD, PATNA</Text>
-                  <Text style={styles.companyTextBold}>GSTIN/UIN: 10BIEPD2766D2ZX</Text>
-                  <Text style={styles.companyText}>State Name: Bihar, Code: 10</Text>
-                  <Text style={styles.companyText}>Contact: 7493916194</Text>
+                  <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 5.5, color: '#1d4ed8', marginBottom: 2 }}>
+                    Scaffolding, Formwork & Construction Steel Structures
+                  </Text>
+                  <Text style={styles.companyText}>MAUZA JHALI, CIRCLE KANKARBAGH, 50B, WARD 55 P.NO-2167078,</Text>
+                  <Text style={styles.companyText}>JAKARIYAPUR, TRINITY GLOBAL SCHOOL, ROAD NO 3, PATNA, BIHAR - 800007</Text>
+                  <Text style={styles.companyTextBold}>GSTIN/UIN: 10BIEPD2766D2ZX  |  PAN: BIEPD2766D</Text>
+                  <Text style={styles.companyText}>Contact: +91 7493916194  |  State: Bihar, Code: 10</Text>
                 </View>
               </View>
 
@@ -399,8 +387,8 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                     <Text style={styles.buyerText}>State Name: Bihar, Code: 10</Text>
                   </>
                 )}
-                {buyer.phone ? <Text style={styles.buyerText}>Phone: {buyer.phone}</Text> : null}
-                {buyer.email ? <Text style={styles.buyerText}>Email: {buyer.email}</Text> : null}
+                {buyer.contactPerson ? <Text style={styles.buyerText}>Contact Person: {buyer.contactPerson}</Text> : null}
+                {buyer.phone ? <Text style={styles.buyerText}>Mobile / Phone: {buyer.phone}</Text> : null}
               </View>
             </View>
 
