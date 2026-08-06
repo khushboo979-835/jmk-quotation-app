@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Link } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Link, Svg, Path, Rect, Circle } from '@react-pdf/renderer';
 import { QuotationFormData } from '../types/quotation';
 import { 
   calculateSubtotal, 
@@ -10,12 +10,13 @@ import {
   calculateTotalWeight
 } from '../utils/calculations';
 import { numberToWords } from '../utils/numberToWords';
+import { getStateFromGSTIN } from '../utils/gstLookup';
 
 const styles = StyleSheet.create({
   page: {
     padding: 22.7, // 8mm margin
     fontFamily: 'Helvetica',
-    fontSize: 7.5,
+    fontSize: 7.2,
     color: '#000000',
     lineHeight: 1.3,
   },
@@ -25,71 +26,129 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     flex: 1,
   },
+  // Tally layout header section
   headerSection: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#000000',
+    height: 168,
   },
-  companyDetails: {
-    width: '60%',
-    padding: 8,
+  leftHeaderColumn: {
+    width: '50%',
     borderRightWidth: 1,
     borderRightColor: '#000000',
+    height: '100%',
+    flexDirection: 'column',
+  },
+  rightHeaderColumn: {
+    width: '50%',
+    height: '100%',
+    flexDirection: 'column',
+  },
+  // Top left: Company Details block
+  companyBlock: {
+    height: 88,
+    borderBottomWidth: 1,
+    borderBottomColor: '#000000',
+    flexDirection: 'row',
+  },
+  logoBlock: {
+    width: 75,
+    height: '100%',
+    borderRightWidth: 1,
+    borderRightColor: '#000000',
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f5f5f4', // Sand/stone colored light background
+  },
+  companyDetailsBlock: {
+    flex: 1,
+    padding: 5,
+    justifyContent: 'center',
   },
   companyName: {
-    fontSize: 14,
+    fontSize: 10,
     fontFamily: 'Helvetica-Bold',
     color: '#000000',
     textDecoration: 'none',
-  },
-  companySubtitle: {
-    fontSize: 7.5,
-    fontFamily: 'Helvetica-Bold',
-    marginTop: 2,
-  },
-  companyText: {
-    fontSize: 7,
-    marginTop: 2,
-  },
-  invoiceDetails: {
-    width: '40%',
-    padding: 8,
-  },
-  titleText: {
-    fontSize: 14,
-    fontFamily: 'Helvetica-Bold',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  metaText: {
-    fontSize: 7.5,
     marginBottom: 2,
   },
-  metaValue: {
-    fontFamily: 'Helvetica-Bold',
+  companyText: {
+    fontSize: 6,
+    color: '#000000',
+    marginBottom: 0.5,
   },
-  buyerSection: {
+  companyTextBold: {
+    fontSize: 6.2,
+    fontFamily: 'Helvetica-Bold',
+    color: '#000000',
+    marginBottom: 0.5,
+  },
+  // Bottom left: Buyer block
+  buyerBlock: {
+    height: 80,
+    padding: 6,
+    flexDirection: 'column',
+  },
+  buyerLabel: {
+    fontSize: 6.5,
+    fontFamily: 'Helvetica-Bold',
+    color: '#4b5563',
+    marginBottom: 2,
+  },
+  buyerName: {
+    fontSize: 8.2,
+    fontFamily: 'Helvetica-Bold',
+    color: '#000000',
+    marginBottom: 2,
+  },
+  buyerText: {
+    fontSize: 6.8,
+    color: '#000000',
+    marginBottom: 0.8,
+  },
+  buyerTextBold: {
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold',
+    color: '#000000',
+    marginBottom: 0.8,
+  },
+  // Right grid layout styles
+  gridRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#000000',
+    height: 24,
   },
-  buyerBlock: {
+  gridCell: {
     width: '50%',
-    padding: 8,
+    padding: 3,
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
+  gridLabel: {
+    fontSize: 5.5,
+    color: '#4b5563',
+    fontFamily: 'Helvetica',
+  },
+  gridValue: {
+    fontSize: 7.2,
+    fontFamily: 'Helvetica-Bold',
+    color: '#000000',
+    marginTop: 1,
+  },
+  rightBorder: {
     borderRightWidth: 1,
     borderRightColor: '#000000',
   },
-  transportBlock: {
-    width: '50%',
-    padding: 8,
-  },
   sectionTitle: {
-    fontSize: 8,
+    fontSize: 7,
     fontFamily: 'Helvetica-Bold',
     textTransform: 'uppercase',
-    marginBottom: 4,
-    textDecoration: 'underline',
+    marginBottom: 3,
   },
+  // Table styles
   table: {
     width: '100%',
   },
@@ -99,40 +158,50 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#000000',
     textAlign: 'center',
+    alignItems: 'stretch',
+    minHeight: 20,
   },
   tableHeaderCell: {
-    fontSize: 7.5,
+    fontSize: 7,
     fontFamily: 'Helvetica-Bold',
-    padding: 4,
+    padding: 3,
+    textAlign: 'center',
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#000000',
-    minHeight: 20,
-    alignItems: 'center',
+    minHeight: 22,
+    alignItems: 'stretch',
   },
-  tableCell: {
-    padding: 4,
-    fontSize: 7.5,
+  cellText: {
+    fontSize: 7,
+    fontFamily: 'Helvetica',
   },
-  colNo: { width: '5%', textAlign: 'center', borderRightWidth: 1, borderRightColor: '#000000', height: '100%', justifyContent: 'center' },
-  colDesc: { width: '43%', borderRightWidth: 1, borderRightColor: '#000000', height: '100%', justifyContent: 'center', paddingLeft: 6 },
-  colHsn: { width: '10%', textAlign: 'center', borderRightWidth: 1, borderRightColor: '#000000', height: '100%', justifyContent: 'center' },
-  colUnit: { width: '8%', textAlign: 'center', borderRightWidth: 1, borderRightColor: '#000000', height: '100%', justifyContent: 'center' },
-  colQty: { width: '8%', textAlign: 'center', borderRightWidth: 1, borderRightColor: '#000000', height: '100%', justifyContent: 'center' },
-  colRate: { width: '12%', textAlign: 'right', borderRightWidth: 1, borderRightColor: '#000000', height: '100%', justifyContent: 'center', paddingRight: 4 },
-  colAmount: { width: '14%', textAlign: 'right', paddingRight: 4 },
-  productLink: {
-    color: '#0000ee',
-    textDecoration: 'underline',
+  cellTextBold: {
+    fontSize: 7,
     fontFamily: 'Helvetica-Bold',
   },
+  // Table column widths
+  colNo: { width: '6%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'center' },
+  colDesc: { width: '44%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', paddingLeft: 6, paddingRight: 4, paddingVertical: 3 },
+  colHsn: { width: '10%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'center' },
+  colQty: { width: '12%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'flex-end', paddingRight: 6 },
+  colRate: { width: '10%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'flex-end', paddingRight: 6 },
+  colUnit: { width: '6%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'center' },
+  colAmount: { width: '12%', justifyContent: 'center', alignItems: 'flex-end', paddingRight: 6 },
+  productLink: {
+    color: '#1d4ed8',
+    textDecoration: 'underline',
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 7,
+  },
   weightSubtext: {
-    fontSize: 6,
+    fontSize: 5.5,
     color: '#4b5563',
     marginTop: 1,
   },
+  // Totals layout
   totalsSection: {
     flexDirection: 'row',
     borderBottomWidth: 1,
@@ -153,7 +222,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 4,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#000000',
   },
   grandTotalRow: {
     flexDirection: 'row',
@@ -163,8 +232,9 @@ const styles = StyleSheet.create({
   },
   grandTotalText: {
     fontFamily: 'Helvetica-Bold',
-    fontSize: 8.5,
+    fontSize: 8.2,
   },
+  // HSN Breakdown
   hsnSection: {
     padding: 8,
     borderBottomWidth: 1,
@@ -180,7 +250,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#000000',
-    alignItems: 'center',
+    alignItems: 'stretch',
     minHeight: 16,
   },
   hsnHeader: {
@@ -189,17 +259,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#000000',
     textAlign: 'center',
+    alignItems: 'stretch',
   },
   hsnCol: {
     padding: 3,
-    fontSize: 7,
+    fontSize: 6.5,
     borderRightWidth: 1,
     borderRightColor: '#000000',
+    justifyContent: 'center',
   },
+  // Footer & signatures
   footerSection: {
     flexDirection: 'row',
     marginTop: 'auto',
     minHeight: 80,
+    borderTopWidth: 1,
+    borderTopColor: '#000000',
   },
   bankBlock: {
     width: '60%',
@@ -216,10 +291,10 @@ const styles = StyleSheet.create({
   signatureLine: {
     borderTopWidth: 1,
     borderTopColor: '#000000',
-    width: '80%',
+    width: '85%',
     textAlign: 'center',
     paddingTop: 4,
-    fontSize: 7.5,
+    fontSize: 7.2,
     fontFamily: 'Helvetica-Bold',
   },
 });
@@ -229,7 +304,26 @@ interface QuotationPDFProps {
 }
 
 export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
-  const { quotationNumber, quotationDate, buyer, items, taxType, bankDetails, authorisedSignatory } = data;
+  const { 
+    quotationNumber, 
+    quotationDate, 
+    buyer, 
+    items, 
+    taxType, 
+    bankDetails, 
+    authorisedSignatory,
+    deliveryNote,
+    modeTermsOfPayment,
+    referenceNo,
+    otherReferences,
+    buyerOrderNo,
+    buyerOrderDate,
+    dispatchDocNo,
+    deliveryNoteDate,
+    dispatchedThrough,
+    destination,
+    termsOfDelivery
+  } = data;
 
   const subtotal = calculateSubtotal(items);
   const taxes = calculateTaxAmounts(subtotal, taxType);
@@ -242,59 +336,183 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.container}>
-          {/* Header Branding */}
+          {/* Tally-Style Header Section */}
           <View style={styles.headerSection}>
-            <View style={styles.companyDetails}>
-              <Link src="https://www.indiamart.com/jmkengineeringdevelopers/" style={styles.companyName}>
-                JMK ENGINEERING & DEVELOPER
-              </Link>
-              <Text style={styles.companySubtitle}>Scaffolding, Formwork & Construction Steel Structures</Text>
-              <Text style={styles.companyText}>GSTIN: 10AHVPJ9876K1Z9 | PAN: AHVPJ9876K</Text>
-              <Text style={styles.companyText}>State: Bihar (Code 10)</Text>
-              <Text style={styles.companyText}>Address: Industrial Area, Patna, Bihar - 800013</Text>
-            </View>
-            <View style={styles.invoiceDetails}>
-              <Text style={styles.titleText}>Quotation</Text>
-              <Text style={styles.metaText}>Quotation No: <Text style={styles.metaValue}>{quotationNumber}</Text></Text>
-              <Text style={styles.metaText}>Date: <Text style={styles.metaValue}>{quotationDate}</Text></Text>
-              <Text style={styles.metaText}>PAN: <Text style={styles.metaValue}>AHVPJ9876K</Text></Text>
-            </View>
-          </View>
+            
+            {/* Left Header Column: Company Details + Buyer details */}
+            <View style={styles.leftHeaderColumn}>
+              
+              {/* Company details with SVG logo */}
+              <View style={styles.companyBlock}>
+                <View style={styles.logoBlock}>
+                  <Svg width="50" height="40" viewBox="0 0 100 80">
+                    {/* Base house shape */}
+                    <Path d="M 20 45 L 50 18 L 80 45" fill="none" stroke="#1d4ed8" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+                    <Path d="M 28 42 L 28 75 L 72 75 L 72 42" fill="none" stroke="#1e3a8a" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+                    
+                    {/* Door */}
+                    <Rect x="43" y="55" width="14" height="20" fill="#1d4ed8" />
+                    
+                    {/* Windows */}
+                    <Rect x="36" y="32" width="10" height="10" fill="#1d4ed8" stroke="#ffffff" strokeWidth="1" />
+                    <Rect x="54" y="32" width="10" height="10" fill="#1d4ed8" stroke="#ffffff" strokeWidth="1" />
 
-          {/* Client & Transport Metadata */}
-          <View style={styles.buyerSection}>
-            <View style={styles.buyerBlock}>
-              <Text style={styles.sectionTitle}>Details of Buyer / Bill to:</Text>
-              <Text style={styles.metaText}>Name: <Text style={styles.metaValue}>{buyer.name || 'N/A'}</Text></Text>
-              <Text style={styles.metaText}>Address: <Text style={styles.metaValue}>{buyer.address || 'N/A'}</Text></Text>
-              {buyer.gstin ? <Text style={styles.metaText}>GSTIN: <Text style={styles.metaValue}>{buyer.gstin}</Text></Text> : null}
-              {buyer.phone ? <Text style={styles.metaText}>Phone: <Text style={styles.metaValue}>{buyer.phone}</Text></Text> : null}
-              {buyer.email ? <Text style={styles.metaText}>Email: <Text style={styles.metaValue}>{buyer.email}</Text></Text> : null}
+                    {/* Gear icon on roof line */}
+                    <Circle cx="72" cy="22" r="10" fill="#ffffff" stroke="#1e3a8a" strokeWidth="3" />
+                    <Path d="M 72 8 L 72 12 M 72 32 L 72 36 M 58 22 L 62 22 M 82 22 L 86 22 M 62 12 L 65 15 M 79 29 L 82 32 M 62 32 L 65 29 M 79 15 L 82 12" stroke="#1e3a8a" strokeWidth="3" strokeLinecap="round" />
+                    <Circle cx="72" cy="22" r="5" fill="#1e3a8a" />
+                  </Svg>
+                  <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 10, color: '#1e3a8a', marginTop: 1, letterSpacing: 0.5 }}>JMK</Text>
+                  <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 4.8, color: '#4b5563', marginTop: 1, letterSpacing: 0.2 }}>ENGINEERING</Text>
+                  <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 4.8, color: '#4b5563', letterSpacing: 0.2 }}>& DEVELOPER</Text>
+                </View>
+                
+                <View style={styles.companyDetailsBlock}>
+                  <Link src="https://www.indiamart.com/jmkengineeringdevelopers/" style={styles.companyName}>
+                    JMK ENGINEERING & DEVELOPER
+                  </Link>
+                  <Text style={styles.companyText}>MAUZA JHALI, CIRCLE KANKARBAGH</Text>
+                  <Text style={styles.companyText}>50B,WARD 55 P.NO-2167078,</Text>
+                  <Text style={styles.companyText}>JAKARIYAPUR, TRINITY GLOBAL SCHOOL,</Text>
+                  <Text style={styles.companyText}>ROAD NO 3, KRISHNA NIKETAN ROAD, PATNA</Text>
+                  <Text style={styles.companyTextBold}>GSTIN/UIN: 10BIEPD2766D2ZX</Text>
+                  <Text style={styles.companyText}>State Name: Bihar, Code: 10</Text>
+                  <Text style={styles.companyText}>Contact: 7493916194</Text>
+                </View>
+              </View>
+
+              {/* Buyer (Bill to) details */}
+              <View style={styles.buyerBlock}>
+                <Text style={styles.buyerLabel}>Buyer (Bill to)</Text>
+                <Text style={styles.buyerName}>{buyer.name || 'N/A'}</Text>
+                <Text style={styles.buyerText}>{buyer.address || 'N/A'}</Text>
+                {buyer.gstin ? (
+                  <>
+                    <Text style={styles.buyerTextBold}>GSTIN/UIN: {buyer.gstin}</Text>
+                    <Text style={styles.buyerText}>
+                      State Name: {getStateFromGSTIN(buyer.gstin)?.name || 'N/A'}, Code: {buyer.gstin.substring(0, 2)}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.buyerTextBold}>GSTIN/UIN: N/A</Text>
+                    <Text style={styles.buyerText}>State Name: Bihar, Code: 10</Text>
+                  </>
+                )}
+                {buyer.phone ? <Text style={styles.buyerText}>Phone: {buyer.phone}</Text> : null}
+                {buyer.email ? <Text style={styles.buyerText}>Email: {buyer.email}</Text> : null}
+              </View>
             </View>
-            <View style={styles.transportBlock}>
-              <Text style={styles.sectionTitle}>Transport / Delivery details:</Text>
-              <Text style={styles.metaText}>State of Supply: <Text style={styles.metaValue}>
-                {buyer.gstin ? (buyer.gstin.substring(0, 2) === '10' ? 'Bihar (10) - Local' : `State Code (${buyer.gstin.substring(0, 2)}) - Interstate`) : 'Bihar (10)'}
-              </Text></Text>
-              <Text style={styles.metaText}>Tax Mode: <Text style={styles.metaValue}>
-                {taxType === 'igst' ? 'IGST (Interstate)' : 'CGST + SGST (Local)'}
-              </Text></Text>
-              {totalWeight > 0 ? (
-                <Text style={styles.metaText}>Total Shipment Weight: <Text style={styles.metaValue}>{totalWeight.toLocaleString('en-IN')} kg</Text></Text>
-              ) : null}
+
+            {/* Right Header Column: Tally Dispatch details */}
+            <View style={styles.rightHeaderColumn}>
+              {/* Row 1 */}
+              <View style={styles.gridRow}>
+                <View style={[styles.gridCell, styles.rightBorder]}>
+                  <Text style={styles.gridLabel}>Quotation No.</Text>
+                  <Text style={styles.gridValue}>{quotationNumber}</Text>
+                </View>
+                <View style={styles.gridCell}>
+                  <Text style={styles.gridLabel}>Dated</Text>
+                  <Text style={styles.gridValue}>{quotationDate}</Text>
+                </View>
+              </View>
+              
+              {/* Row 2 */}
+              <View style={styles.gridRow}>
+                <View style={[styles.gridCell, styles.rightBorder]}>
+                  <Text style={styles.gridLabel}>Delivery Note</Text>
+                  <Text style={styles.gridValue}>{deliveryNote || ' '}</Text>
+                </View>
+                <View style={styles.gridCell}>
+                  <Text style={styles.gridLabel}>Mode/Terms of Payment</Text>
+                  <Text style={styles.gridValue}>{modeTermsOfPayment || ' '}</Text>
+                </View>
+              </View>
+              
+              {/* Row 3 */}
+              <View style={styles.gridRow}>
+                <View style={[styles.gridCell, styles.rightBorder]}>
+                  <Text style={styles.gridLabel}>Reference No. & Date</Text>
+                  <Text style={styles.gridValue}>{referenceNo || ' '}</Text>
+                </View>
+                <View style={styles.gridCell}>
+                  <Text style={styles.gridLabel}>Other References</Text>
+                  <Text style={styles.gridValue}>{otherReferences || ' '}</Text>
+                </View>
+              </View>
+
+              {/* Row 4 */}
+              <View style={styles.gridRow}>
+                <View style={[styles.gridCell, styles.rightBorder]}>
+                  <Text style={styles.gridLabel}>Buyer's Order No.</Text>
+                  <Text style={styles.gridValue}>{buyerOrderNo || ' '}</Text>
+                </View>
+                <View style={styles.gridCell}>
+                  <Text style={styles.gridLabel}>Dated</Text>
+                  <Text style={styles.gridValue}>{buyerOrderDate || ' '}</Text>
+                </View>
+              </View>
+
+              {/* Row 5 */}
+              <View style={styles.gridRow}>
+                <View style={[styles.gridCell, styles.rightBorder]}>
+                  <Text style={styles.gridLabel}>Dispatch Doc No.</Text>
+                  <Text style={styles.gridValue}>{dispatchDocNo || ' '}</Text>
+                </View>
+                <View style={styles.gridCell}>
+                  <Text style={styles.gridLabel}>Delivery Note Date</Text>
+                  <Text style={styles.gridValue}>{deliveryNoteDate || ' '}</Text>
+                </View>
+              </View>
+
+              {/* Row 6 */}
+              <View style={styles.gridRow}>
+                <View style={[styles.gridCell, styles.rightBorder]}>
+                  <Text style={styles.gridLabel}>Dispatched through</Text>
+                  <Text style={styles.gridValue}>{dispatchedThrough || ' '}</Text>
+                </View>
+                <View style={styles.gridCell}>
+                  <Text style={styles.gridLabel}>Destination</Text>
+                  <Text style={styles.gridValue}>{destination || ' '}</Text>
+                </View>
+              </View>
+
+              {/* Row 7 - Full width */}
+              <View style={[styles.gridRow, { borderBottomWidth: 0, height: 24 }]}>
+                <View style={[styles.gridCell, { width: '100%' }]}>
+                  <Text style={styles.gridLabel}>Terms of Delivery</Text>
+                  <Text style={styles.gridValue}>{termsOfDelivery || ' '}</Text>
+                </View>
+              </View>
             </View>
+            
           </View>
 
           {/* Description of Goods Table */}
           <View style={styles.table}>
             <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderCell, styles.colNo]}>#</Text>
-              <Text style={[styles.tableHeaderCell, styles.colDesc]}>Description of Goods</Text>
-              <Text style={[styles.tableHeaderCell, styles.colHsn]}>HSN/SAC</Text>
-              <Text style={[styles.tableHeaderCell, styles.colUnit]}>Unit</Text>
-              <Text style={[styles.tableHeaderCell, styles.colQty]}>Qty</Text>
-              <Text style={[styles.tableHeaderCell, styles.colRate]}>Rate (INR)</Text>
-              <Text style={[styles.tableHeaderCell, styles.colAmount]}>Amount (INR)</Text>
+              <View style={styles.colNo}>
+                <Text style={styles.tableHeaderCell}>Sl. No.</Text>
+              </View>
+              <View style={styles.colDesc}>
+                <Text style={[styles.tableHeaderCell, { textAlign: 'left', paddingLeft: 2 }]}>Description of Goods</Text>
+              </View>
+              <View style={styles.colHsn}>
+                <Text style={styles.tableHeaderCell}>HSN/SAC</Text>
+              </View>
+              <View style={styles.colQty}>
+                <Text style={styles.tableHeaderCell}>Quantity</Text>
+              </View>
+              <View style={styles.colRate}>
+                <Text style={styles.tableHeaderCell}>Rate</Text>
+              </View>
+              <View style={styles.colUnit}>
+                <Text style={styles.tableHeaderCell}>Per</Text>
+              </View>
+              <View style={styles.colAmount}>
+                <Text style={styles.tableHeaderCell}>Amount</Text>
+              </View>
             </View>
 
             {items.map((item, index) => {
@@ -303,14 +521,16 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
 
               return (
                 <View key={item.id} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, styles.colNo]}>{index + 1}</Text>
-                  <View style={[styles.tableCell, styles.colDesc]}>
+                  <View style={styles.colNo}>
+                    <Text style={styles.cellText}>{index + 1}</Text>
+                  </View>
+                  <View style={styles.colDesc}>
                     {item.photoUrl ? (
                       <Link src={item.photoUrl} style={styles.productLink}>
                         {item.productName}
                       </Link>
                     ) : (
-                      <Text style={{ fontFamily: 'Helvetica-Bold' }}>{item.productName}</Text>
+                      <Text style={styles.cellTextBold}>{item.productName}</Text>
                     )}
                     {hasWeight ? (
                       <Text style={styles.weightSubtext}>
@@ -318,11 +538,21 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                       </Text>
                     ) : null}
                   </View>
-                  <Text style={[styles.tableCell, styles.colHsn]}>{item.hsn}</Text>
-                  <Text style={[styles.tableCell, styles.colUnit]}>{item.unit}</Text>
-                  <Text style={[styles.tableCell, styles.colQty]}>{item.quantity}</Text>
-                  <Text style={[styles.tableCell, styles.colRate]}>INR {item.rate.toFixed(2)}</Text>
-                  <Text style={[styles.tableCell, styles.colAmount]}>INR {calculateItemAmount(item).toFixed(2)}</Text>
+                  <View style={styles.colHsn}>
+                    <Text style={styles.cellText}>{item.hsn}</Text>
+                  </View>
+                  <View style={styles.colQty}>
+                    <Text style={styles.cellTextBold}>{item.quantity.toFixed(2)} {item.unit}</Text>
+                  </View>
+                  <View style={styles.colRate}>
+                    <Text style={styles.cellText}>{item.rate.toFixed(2)}</Text>
+                  </View>
+                  <View style={styles.colUnit}>
+                    <Text style={styles.cellText}>{item.unit}</Text>
+                  </View>
+                  <View style={styles.colAmount}>
+                    <Text style={styles.cellTextBold}>{(item.quantity * item.rate).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                  </View>
                 </View>
               );
             })}
@@ -334,7 +564,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
               <Text style={{ fontFamily: 'Helvetica-Bold', marginBottom: 2 }}>Amount Chargeable in Words:</Text>
               <Text style={{ fontStyle: 'italic', marginBottom: 6 }}>{totalInWords}</Text>
               {totalWeight > 0 ? (
-                <View style={{ borderTopWidth: 1, borderTopColor: '#e5e7eb', paddingTop: 4 }}>
+                <View style={{ borderTopWidth: 1, borderTopColor: '#000000', paddingTop: 4 }}>
                   <Text style={{ fontFamily: 'Helvetica-Bold' }}>Total Weight for Logistics: {totalWeight.toLocaleString('en-IN')} kg</Text>
                   <Text style={{ fontSize: 6.5, color: '#4b5563', marginTop: 1 }}>
                     * Transport/Logistics charges are extra based on shipment weight of {totalWeight} kg.
@@ -342,31 +572,32 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                 </View>
               ) : null}
             </View>
+            
             <View style={styles.totalsBlock}>
               <View style={styles.totalRow}>
-                <Text>Subtotal (Taxable Value):</Text>
-                <Text>INR {subtotal.toFixed(2)}</Text>
+                <Text style={styles.cellText}>Subtotal (Taxable Value):</Text>
+                <Text style={styles.cellTextBold}>{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
               </View>
               {taxType === 'igst' ? (
                 <View style={styles.totalRow}>
-                  <Text>IGST @ 18%:</Text>
-                  <Text>INR {taxes.igst.toFixed(2)}</Text>
+                  <Text style={styles.cellText}>IGST @ 18%:</Text>
+                  <Text style={styles.cellTextBold}>{taxes.igst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                 </View>
               ) : (
                 <>
                   <View style={styles.totalRow}>
-                    <Text>CGST @ 9%:</Text>
-                    <Text>INR {taxes.cgst.toFixed(2)}</Text>
+                    <Text style={styles.cellText}>CGST @ 9%:</Text>
+                    <Text style={styles.cellTextBold}>{taxes.cgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                   </View>
                   <View style={styles.totalRow}>
-                    <Text>SGST @ 9%:</Text>
-                    <Text>INR {taxes.sgst.toFixed(2)}</Text>
+                    <Text style={styles.cellText}>SGST @ 9%:</Text>
+                    <Text style={styles.cellTextBold}>{taxes.sgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                   </View>
                 </>
               )}
               <View style={styles.grandTotalRow}>
                 <Text style={styles.grandTotalText}>Grand Total:</Text>
-                <Text style={styles.grandTotalText}>INR {grandTotal.toFixed(2)}</Text>
+                <Text style={styles.grandTotalText}>INR {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
               </View>
             </View>
           </View>
@@ -379,38 +610,78 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                 {taxType === 'igst' ? (
                   <>
                     <View style={styles.hsnHeader}>
-                      <Text style={[styles.hsnCol, { width: '20%' }]}>HSN/SAC</Text>
-                      <Text style={[styles.hsnCol, { width: '25%', textAlign: 'right' }]}>Taxable Value (INR)</Text>
-                      <Text style={[styles.hsnCol, { width: '15%' }]}>IGST Rate</Text>
-                      <Text style={[styles.hsnCol, { width: '20%', textAlign: 'right' }]}>IGST Amount (INR)</Text>
-                      <Text style={[styles.hsnCol, { width: '20%', textAlign: 'right', borderRightWidth: 0 }]}>Total Tax (INR)</Text>
+                      <View style={[styles.hsnCol, { width: '20%' }]}>
+                        <Text style={{ fontFamily: 'Helvetica-Bold', textAlign: 'center' }}>HSN/SAC</Text>
+                      </View>
+                      <View style={[styles.hsnCol, { width: '25%' }]}>
+                        <Text style={{ fontFamily: 'Helvetica-Bold', textAlign: 'right' }}>Taxable Value (INR)</Text>
+                      </View>
+                      <View style={[styles.hsnCol, { width: '15%' }]}>
+                        <Text style={{ fontFamily: 'Helvetica-Bold', textAlign: 'center' }}>IGST Rate</Text>
+                      </View>
+                      <View style={[styles.hsnCol, { width: '20%' }]}>
+                        <Text style={{ fontFamily: 'Helvetica-Bold', textAlign: 'right' }}>IGST Amount (INR)</Text>
+                      </View>
+                      <View style={[styles.hsnCol, { width: '20%', borderRightWidth: 0 }]}>
+                        <Text style={{ fontFamily: 'Helvetica-Bold', textAlign: 'right' }}>Total Tax (INR)</Text>
+                      </View>
                     </View>
                     {hsnBreakup.map((row) => (
                       <View key={row.hsn} style={styles.hsnRow}>
-                        <Text style={[styles.tableCell, styles.hsnCol, { width: '20%', textAlign: 'center' }]}>{row.hsn}</Text>
-                        <Text style={[styles.tableCell, styles.hsnCol, { width: '25%', textAlign: 'right' }]}>INR {row.taxableValue.toFixed(2)}</Text>
-                        <Text style={[styles.tableCell, styles.hsnCol, { width: '15%', textAlign: 'center' }]}>{row.igstRate}%</Text>
-                        <Text style={[styles.tableCell, styles.hsnCol, { width: '20%', textAlign: 'right' }]}>INR {(row.igstAmount || 0).toFixed(2)}</Text>
-                        <Text style={[styles.tableCell, styles.hsnCol, { width: '20%', textAlign: 'right', borderRightWidth: 0 }]}>INR {row.totalTax.toFixed(2)}</Text>
+                        <View style={[styles.hsnCol, { width: '20%', textAlign: 'center' }]}>
+                          <Text>{row.hsn}</Text>
+                        </View>
+                        <View style={[styles.hsnCol, { width: '25%', textAlign: 'right' }]}>
+                          <Text>{row.taxableValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                        </View>
+                        <View style={[styles.hsnCol, { width: '15%', textAlign: 'center' }]}>
+                          <Text>{row.igstRate}%</Text>
+                        </View>
+                        <View style={[styles.hsnCol, { width: '20%', textAlign: 'right' }]}>
+                          <Text>{(row.igstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                        </View>
+                        <View style={[styles.hsnCol, { width: '20%', textAlign: 'right', borderRightWidth: 0 }]}>
+                          <Text>{row.totalTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                        </View>
                       </View>
                     ))}
                   </>
                 ) : (
                   <>
                     <View style={styles.hsnHeader}>
-                      <Text style={[styles.hsnCol, { width: '15%' }]}>HSN/SAC</Text>
-                      <Text style={[styles.hsnCol, { width: '25%', textAlign: 'right' }]}>Taxable Value (INR)</Text>
-                      <Text style={[styles.hsnCol, { width: '20%', textAlign: 'right' }]}>CGST (9%) (INR)</Text>
-                      <Text style={[styles.hsnCol, { width: '20%', textAlign: 'right' }]}>SGST (9%) (INR)</Text>
-                      <Text style={[styles.hsnCol, { width: '20%', textAlign: 'right', borderRightWidth: 0 }]}>Total Tax (INR)</Text>
+                      <View style={[styles.hsnCol, { width: '15%' }]}>
+                        <Text style={{ fontFamily: 'Helvetica-Bold', textAlign: 'center' }}>HSN/SAC</Text>
+                      </View>
+                      <View style={[styles.hsnCol, { width: '25%' }]}>
+                        <Text style={{ fontFamily: 'Helvetica-Bold', textAlign: 'right' }}>Taxable Value (INR)</Text>
+                      </View>
+                      <View style={[styles.hsnCol, { width: '20%' }]}>
+                        <Text style={{ fontFamily: 'Helvetica-Bold', textAlign: 'right' }}>CGST (9%) (INR)</Text>
+                      </View>
+                      <View style={[styles.hsnCol, { width: '20%' }]}>
+                        <Text style={{ fontFamily: 'Helvetica-Bold', textAlign: 'right' }}>SGST (9%) (INR)</Text>
+                      </View>
+                      <View style={[styles.hsnCol, { width: '20%', borderRightWidth: 0 }]}>
+                        <Text style={{ fontFamily: 'Helvetica-Bold', textAlign: 'right' }}>Total Tax (INR)</Text>
+                      </View>
                     </View>
                     {hsnBreakup.map((row) => (
                       <View key={row.hsn} style={styles.hsnRow}>
-                        <Text style={[styles.tableCell, styles.hsnCol, { width: '15%', textAlign: 'center' }]}>{row.hsn}</Text>
-                        <Text style={[styles.tableCell, styles.hsnCol, { width: '25%', textAlign: 'right' }]}>INR {row.taxableValue.toFixed(2)}</Text>
-                        <Text style={[styles.tableCell, styles.hsnCol, { width: '20%', textAlign: 'right' }]}>INR {(row.cgstAmount || 0).toFixed(2)}</Text>
-                        <Text style={[styles.tableCell, styles.hsnCol, { width: '20%', textAlign: 'right' }]}>INR {(row.sgstAmount || 0).toFixed(2)}</Text>
-                        <Text style={[styles.tableCell, styles.hsnCol, { width: '20%', textAlign: 'right', borderRightWidth: 0 }]}>INR {row.totalTax.toFixed(2)}</Text>
+                        <View style={[styles.hsnCol, { width: '15%', textAlign: 'center' }]}>
+                          <Text>{row.hsn}</Text>
+                        </View>
+                        <View style={[styles.hsnCol, { width: '25%', textAlign: 'right' }]}>
+                          <Text>{row.taxableValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                        </View>
+                        <View style={[styles.hsnCol, { width: '20%', textAlign: 'right' }]}>
+                          <Text>{(row.cgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                        </View>
+                        <View style={[styles.hsnCol, { width: '20%', textAlign: 'right' }]}>
+                          <Text>{(row.sgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                        </View>
+                        <View style={[styles.hsnCol, { width: '20%', textAlign: 'right', borderRightWidth: 0 }]}>
+                          <Text>{row.totalTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                        </View>
                       </View>
                     ))}
                   </>
@@ -423,12 +694,33 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
           <View style={styles.footerSection}>
             <View style={styles.bankBlock}>
               <Text style={{ fontFamily: 'Helvetica-Bold', marginBottom: 2 }}>JMK Company Bank Details:</Text>
-              <Text>Bank Name: <Text style={{ fontFamily: 'Helvetica-Bold' }}>{bankDetails.bankName}</Text></Text>
-              <Text>Account No: <Text style={{ fontFamily: 'Helvetica-Bold' }}>{bankDetails.accountNumber}</Text></Text>
-              <Text>IFSC Code: <Text style={{ fontFamily: 'Helvetica-Bold' }}>{bankDetails.ifsc}</Text></Text>
-              <Text>PAN: <Text style={{ fontFamily: 'Helvetica-Bold' }}>AHVPJ9876K</Text></Text>
-              <Text>GSTIN: <Text style={{ fontFamily: 'Helvetica-Bold' }}>10AHVPJ9876K1Z9</Text></Text>
+              
+              <Text style={styles.cellText}>
+                <Text>Bank Name: </Text>
+                <Text style={{ fontFamily: 'Helvetica-Bold' }}>{bankDetails.bankName}</Text>
+              </Text>
+              
+              <Text style={styles.cellText}>
+                <Text>Account No: </Text>
+                <Text style={{ fontFamily: 'Helvetica-Bold' }}>{bankDetails.accountNumber}</Text>
+              </Text>
+              
+              <Text style={styles.cellText}>
+                <Text>IFSC Code: </Text>
+                <Text style={{ fontFamily: 'Helvetica-Bold' }}>{bankDetails.ifsc}</Text>
+              </Text>
+              
+              <Text style={styles.cellText}>
+                <Text>PAN: </Text>
+                <Text style={{ fontFamily: 'Helvetica-Bold' }}>BIEPD2766D</Text>
+              </Text>
+              
+              <Text style={styles.cellText}>
+                <Text>GSTIN: </Text>
+                <Text style={{ fontFamily: 'Helvetica-Bold' }}>10BIEPD2766D2ZX</Text>
+              </Text>
             </View>
+            
             <View style={styles.signatoryBlock}>
               <Text style={{ fontFamily: 'Helvetica-Bold' }}>For {authorisedSignatory}</Text>
               <Text style={styles.signatureLine}>Authorised Signatory</Text>

@@ -33,6 +33,20 @@ export default function Home() {
   const [bankDetails] = useState({ bankName: 'HDFC Bank', accountNumber: '50200100070241', ifsc: 'HDFC0004927' });
   const [authorisedSignatory, setAuthorisedSignatory] = useState('JMK ENGINEERING & DEVELOPER');
 
+  // Tally advanced transport & delivery fields
+  const [deliveryNote, setDeliveryNote] = useState('');
+  const [modeTermsOfPayment, setModeTermsOfPayment] = useState('');
+  const [referenceNo, setReferenceNo] = useState('');
+  const [otherReferences, setOtherReferences] = useState('');
+  const [buyerOrderNo, setBuyerOrderNo] = useState('');
+  const [buyerOrderDate, setBuyerOrderDate] = useState('');
+  const [dispatchDocNo, setDispatchDocNo] = useState('');
+  const [deliveryNoteDate, setDeliveryNoteDate] = useState('');
+  const [dispatchedThrough, setDispatchedThrough] = useState('');
+  const [destination, setDestination] = useState('');
+  const [termsOfDelivery, setTermsOfDelivery] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const [pdfUrl, setPdfUrl] = useState<string | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -110,6 +124,17 @@ export default function Home() {
         taxType,
         bankDetails,
         authorisedSignatory,
+        deliveryNote,
+        modeTermsOfPayment,
+        referenceNo,
+        otherReferences,
+        buyerOrderNo,
+        buyerOrderDate,
+        dispatchDocNo,
+        deliveryNoteDate,
+        dispatchedThrough,
+        destination,
+        termsOfDelivery,
       };
 
       const res = await fetch('/api/generate-pdf', {
@@ -211,6 +236,128 @@ export default function Home() {
               onChangeTaxType={setTaxType} 
             />
 
+            {/* Row 2.5: Collapsible Advanced Tally Details */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+              <button 
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center justify-between w-full font-bold text-gray-800 text-base focus:outline-none cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></span>
+                  <span>Transport & Dispatch Details (Tally Layout)</span>
+                </div>
+                <span className="text-xs text-blue-600 font-bold hover:underline">
+                  {showAdvanced ? 'Hide Details ▲' : 'Show Details ▼'}
+                </span>
+              </button>
+              
+              {showAdvanced && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-150 transition-all duration-300">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Delivery Note</label>
+                    <input
+                      value={deliveryNote}
+                      onChange={(e) => setDeliveryNote(e.target.value)}
+                      placeholder="e.g. Del-909"
+                      className="px-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50/20 font-semibold text-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Mode / Terms of Payment</label>
+                    <input
+                      value={modeTermsOfPayment}
+                      onChange={(e) => setModeTermsOfPayment(e.target.value)}
+                      placeholder="e.g. 100% Advance"
+                      className="px-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50/20 font-semibold text-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Reference No. & Date</label>
+                    <input
+                      value={referenceNo}
+                      onChange={(e) => setReferenceNo(e.target.value)}
+                      placeholder="e.g. Ref-123, 04-Aug-2026"
+                      className="px-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50/20 font-semibold text-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Other References</label>
+                    <input
+                      value={otherReferences}
+                      onChange={(e) => setOtherReferences(e.target.value)}
+                      placeholder="e.g. Email request"
+                      className="px-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50/20 font-semibold text-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Buyer's Order No.</label>
+                    <input
+                      value={buyerOrderNo}
+                      onChange={(e) => setBuyerOrderNo(e.target.value)}
+                      placeholder="e.g. PO-8876"
+                      className="px-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50/20 font-semibold text-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Order Date</label>
+                    <input
+                      type="date"
+                      value={buyerOrderDate}
+                      onChange={(e) => setBuyerOrderDate(e.target.value)}
+                      className="px-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50/20 font-semibold text-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Dispatch Doc No.</label>
+                    <input
+                      value={dispatchDocNo}
+                      onChange={(e) => setDispatchDocNo(e.target.value)}
+                      placeholder="e.g. Lorry No. BR01X1234"
+                      className="px-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50/20 font-semibold text-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Delivery Note Date</label>
+                    <input
+                      type="date"
+                      value={deliveryNoteDate}
+                      onChange={(e) => setDeliveryNoteDate(e.target.value)}
+                      className="px-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50/20 font-semibold text-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Dispatched through</label>
+                    <input
+                      value={dispatchedThrough}
+                      onChange={(e) => setDispatchedThrough(e.target.value)}
+                      placeholder="e.g. V-Trans Logistics"
+                      className="px-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50/20 font-semibold text-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Destination</label>
+                    <input
+                      value={destination}
+                      onChange={(e) => setDestination(e.target.value)}
+                      placeholder="e.g. Project Site, Patna"
+                      className="px-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50/20 font-semibold text-gray-700"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Terms of Delivery</label>
+                    <textarea
+                      rows={2}
+                      value={termsOfDelivery}
+                      onChange={(e) => setTermsOfDelivery(e.target.value)}
+                      placeholder="e.g. Ex-Patna yard. Loading charges extra..."
+                      className="px-3 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50/20 resize-none font-sans font-semibold text-gray-700"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Row 3: Bank & Seller Identity Details Block */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center gap-2 mb-3 border-b border-gray-100 pb-3">
@@ -232,15 +379,15 @@ export default function Home() {
                 </div>
                 <div className="pt-2 border-t border-gray-200/40 md:col-span-1">
                   <span className="text-gray-400 block font-medium">Seller GSTIN</span>
-                  <span className="font-bold text-gray-700">10AHVPJ9876K1Z9</span>
+                  <span className="font-bold text-gray-700">10BIEPD2766D2ZX</span>
                 </div>
                 <div className="pt-2 border-t border-gray-200/40 md:col-span-1">
                   <span className="text-gray-400 block font-medium">PAN Number</span>
-                  <span className="font-bold text-gray-700">AHVPJ9876K</span>
+                  <span className="font-bold text-gray-700">BIEPD2766D</span>
                 </div>
                 <div className="pt-2 border-t border-gray-200/40 md:col-span-1">
                   <span className="text-gray-400 block font-medium">Registered Office</span>
-                  <span className="font-bold text-gray-700">Patna, Bihar (10)</span>
+                  <span className="font-bold text-gray-700">Jakariyapur, Patna, Bihar (10)</span>
                 </div>
               </div>
             </div>

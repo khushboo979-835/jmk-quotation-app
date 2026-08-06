@@ -59,6 +59,17 @@ export interface QuotationFormData {
   taxType: TaxType;
   bankDetails: BankDetails;
   authorisedSignatory: string;
+  deliveryNote?: string;
+  modeTermsOfPayment?: string;
+  referenceNo?: string;
+  otherReferences?: string;
+  buyerOrderNo?: string;
+  buyerOrderDate?: string;
+  dispatchDocNo?: string;
+  deliveryNoteDate?: string;
+  dispatchedThrough?: string;
+  destination?: string;
+  termsOfDelivery?: string;
 }
 
 export interface HSNBreakupRow {

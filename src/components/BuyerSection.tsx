@@ -53,8 +53,8 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
           name: companyName,
           address: formattedAddress,
           gstin: cleanGst,
-          email: buyer.email || '',
-          phone: buyer.phone || '',
+          email: data.email || buyer.email || '',
+          phone: data.phone || buyer.phone || '',
         });
 
         // Auto-set Tax Mode based on State Code

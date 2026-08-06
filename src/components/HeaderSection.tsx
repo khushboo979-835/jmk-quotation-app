@@ -14,7 +14,7 @@ export default function HeaderSection({ companyName = 'JMK ENGINEERING & DEVELOP
           {logoUrl ? <img src={logoUrl} alt="logo" className="h-10 w-auto" /> : null}
           <div className="text-lg font-bold text-blue-800">{companyName}</div>
         </a>
-        <div className="text-sm text-gray-600">Engineering & Developer</div>
+        <div className="text-sm text-gray-600 font-medium">Scaffolding, Formwork & Construction Steel Structures</div>
       </div>
       <div className="text-right">
         <div className="text-sm font-semibold">GST Quotation</div>
