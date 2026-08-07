@@ -5,12 +5,13 @@ export async function GET(req: NextRequest) {
   let cleanGstin = '';
   let stateCode = '';
   let stateName = 'Unknown State';
+  let pan = '';
   let taxType = 'interstate';
 
   try {
     const { searchParams } = new URL(req.url);
     const gstinParam = searchParams.get('gstin');
-    
+
     if (!gstinParam) {
       return NextResponse.json(
         { success: false, error: 'GSTIN parameter is required' },
@@ -18,10 +19,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Clean up GSTIN input string automatically (trim whitespace, convert to uppercase)
+    // Clean and sanitize input gstin: Trim whitespace, remove internal spaces, convert to uppercase.
     cleanGstin = gstinParam.trim().toUpperCase().replace(/\s/g, '');
 
-    // Validate 15-character GSTIN regex
+    // Check 15-character GSTIN regex
     const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
     const isValidFormat = gstRegex.test(cleanGstin);
 
@@ -32,8 +33,9 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Extract State Code and name from the clean GSTIN
+    // Extract State Code & PAN
     stateCode = cleanGstin.substring(0, 2);
+    pan = cleanGstin.substring(2, 12);
     stateName = GST_STATE_CODES[stateCode] || 'Unknown State';
     taxType = stateCode === '10' ? 'local' : 'interstate';
 
@@ -43,7 +45,7 @@ export async function GET(req: NextRequest) {
     let response: Response | null = null;
     let resData: any = null;
 
-    // Endpoint 1: https://${process.env.RAPIDAPI_HOST}/v1/gstin/${cleanGstin}
+    // Try Endpoint 1: https://${RAPIDAPI_HOST}/v1/gstin/${cleanGstin}
     try {
       const url1 = `https://${host}/v1/gstin/${cleanGstin}`;
       response = await fetch(url1, {
@@ -63,7 +65,7 @@ export async function GET(req: NextRequest) {
       console.warn('Endpoint 1 query failed, falling back to Endpoint 2...', err);
     }
 
-    // Endpoint 2 (Fallback): https://${process.env.RAPIDAPI_HOST}/v1/gstin/${cleanGstin}/profile
+    // Try Endpoint 2: https://${RAPIDAPI_HOST}/v1/gstin/${cleanGstin}/profile
     if (!resData || !response || !response.ok) {
       const url2 = `https://${host}/v1/gstin/${cleanGstin}/profile`;
       response = await fetch(url2, {
@@ -82,20 +84,23 @@ export async function GET(req: NextRequest) {
     }
 
     if (!response || !response.ok || !resData) {
-      throw new Error('All GST endpoints failed or returned non-200 status');
+      throw new Error('RapidAPI request failed');
     }
 
-    const data = resData.data || resData;
+    const data = resData.data || resData.result || resData;
+    if (!data) {
+      throw new Error('Empty response from RapidAPI');
+    }
 
-    // Extract Legal/Trade Name: data.tradeNam || data.lgnm || data.data?.tradeNam || data.data?.lgnm || data.trade_name || data.legal_name
-    const companyName = data.tradeNam || data.lgnm || (data.data && (data.data.tradeNam || data.data.lgnm)) || data.trade_name || data.legal_name;
+    // Robust response parsing across multiple keys
+    const companyName = data.tradeNam || data.lgnm || data.business_name || data.trade_name || data.legal_name || (data.data && (data.data.tradeNam || data.data.lgnm || data.data.trade_name || data.data.legal_name)) || (data.result && (data.result.legal_name || data.result.trade_name));
 
     if (!companyName) {
       throw new Error('No company name found in the API response payload');
     }
 
-    // Extract Address: data.pradr?.addr || data.data?.pradr?.addr
-    const rawAddr = data.pradr?.addr || (data.data?.pradr?.addr) || data.pradr || data.address || {};
+    // Extract Address
+    const rawAddr = data.pradr?.addr || (data.data?.pradr?.addr) || (data.result?.pradr?.addr) || data.pradr || data.address || {};
     
     const bno = rawAddr.bno || rawAddr.building_no || rawAddr.buildingNo || '';
     const bnm = rawAddr.bnm || rawAddr.building_name || '';
@@ -120,6 +125,7 @@ export async function GET(req: NextRequest) {
       tradeName: companyName,
       legalName: companyName,
       taxType,
+      pan,
       phone: data.phone || data.mobNum || '',
       address: {
         building,
@@ -132,16 +138,23 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err: any) {
-    console.error('GST API lookup failed. Triggering Graceful State Fallback...', err);
+    console.warn('RapidAPI lookup failed. Triggering Graceful API Fallback...', err);
 
-    // GRACEFUL FALLBACK (If API limits exceed, network times out, or query fails but format is valid)
+    // Graceful API Fallback:
+    // If RapidAPI returns 404/500/Quota limit exceeded, extract stateCode (first 2 digits) and PAN (digits 3-12).
+    // Map stateCode to State Name (e.g. '10' -> Bihar).
+    // Set taxType: 'local' (CGST 9% + SGST 9%) if stateCode == '10', else 'interstate' (IGST 18%).
+    // Return JSON: { success: true, isFallback: true, pan, stateCode, stateName, taxType, message: "✓ State Code Matched (Bihar - Code 10)" }
     if (cleanGstin) {
       return NextResponse.json({
         success: true,
         isFallback: true,
-        companyName: '',
+        pan,
+        stateCode,
+        stateName,
         taxType,
-        message: `✓ State Verified (Code ${stateCode} - ${stateName}). Enter Business Name manually if needed.`,
+        message: `✓ State Code Matched (${stateName} - Code ${stateCode})`,
+        companyName: '',
         address: {
           building: '',
           street: '',
@@ -154,7 +167,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Hard fallback failure for invalid formats
     return NextResponse.json(
       { success: false, error: 'GSTIN not registered on Govt Portal' },
       { status: 400 }
