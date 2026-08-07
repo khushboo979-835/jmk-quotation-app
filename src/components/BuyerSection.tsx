@@ -70,7 +70,7 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
 
         setBadge({
           type: 'green',
-          text: `✓ Verified via Govt GST Portal: ${companyName}`
+          text: `✓ Verified via Govt Database: ${companyName}`
         });
       } else {
         // Fallback state (Amber Badge): Keep existing manually typed data
@@ -83,7 +83,7 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
 
         setBadge({
           type: 'amber',
-          text: `✓ Valid GSTIN Format (State Code ${buyerStateCode} - ${stateName}). Enter company name below.`
+          text: data.message || `✓ Valid GSTIN Format (State Code ${buyerStateCode} - ${stateName}). Enter company name below.`
         });
       }
     } catch (err: any) {
