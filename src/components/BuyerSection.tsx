@@ -11,6 +11,7 @@ import {
   HelpCircle,
   ShieldCheck
 } from 'lucide-react';
+import { GST_STATE_CODES } from '../utils/gstStateCodes';
 
 type Props = {
   buyer: Buyer;
@@ -21,60 +22,92 @@ type Props = {
 
 export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTaxType }: Props) {
   const [isFetchingGst, setIsFetchingGst] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [badge, setBadge] = useState<{ type: 'green' | 'amber' | 'red'; text: string } | null>(null);
 
   const handleGSTLookup = async (gstinVal: string) => {
-    const cleanGst = gstinVal.trim().toUpperCase();
+    const cleanGst = gstinVal.trim().toUpperCase().replace(/\s/g, '');
     
     // Validate 15-character GSTIN regex
     const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
     if (!gstRegex.test(cleanGst)) {
-      alert("Invalid GSTIN or not registered on Govt Portal. Please enter details manually.");
-      setError("Invalid GSTIN or not registered on Govt Portal. Please enter details manually.");
-      setSuccess(null);
+      setBadge({ type: 'red', text: "Invalid 15-digit GSTIN pattern." });
       return;
     }
 
     setIsFetchingGst(true);
-    setError(null);
-    setSuccess(null);
+    setBadge(null);
 
     try {
       const res = await fetch(`/api/gst-lookup?gstin=${cleanGst}`);
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Invalid GSTIN or not registered on Govt Portal. Please enter details manually.');
+        throw new Error(data.error || 'Lookup failed');
       }
 
-      // Pre-fill Buyer information
-      const companyName = data.companyName || data.tradeName || data.legalName;
-      const formattedAddress = data.address?.formatted || data.address;
-      
-      onChangeBuyer({
-        name: companyName,
-        address: formattedAddress,
-        gstin: cleanGst,
-        phone: data.phone || buyer.phone || '',
-        contactPerson: buyer.contactPerson || '',
-      });
+      const buyerStateCode = data.address?.stateCode || cleanGst.substring(0, 2);
+      const stateName = data.address?.state || GST_STATE_CODES[buyerStateCode] || 'Unknown State';
 
       // Auto-set Tax Mode based on State Code
       // Seller state is 10 (Bihar)
-      // The API returns taxType as 'local' or 'interstate'. Map 'interstate' to 'igst' for the frontend.
-      const buyerStateCode = data.address?.stateCode || cleanGst.substring(0, 2);
       if (buyerStateCode === '10') {
         onChangeTaxType('local');
       } else {
         onChangeTaxType('igst');
       }
-      setSuccess("✓ Verified via Govt GST Portal");
+
+      if (data.isFallback) {
+        // On Graceful Fallback: Show Amber Badge and preserve manually entered details
+        onChangeBuyer({
+          ...buyer,
+          gstin: cleanGst,
+          name: buyer.name || '',
+          address: buyer.address || '',
+        });
+
+        setBadge({
+          type: 'amber',
+          text: `✓ Valid GSTIN Format (State Code ${buyerStateCode} - ${stateName}). Enter company name below.`
+        });
+      } else {
+        // On API Success: Show Green Badge and auto-fill details
+        const companyName = data.companyName || data.tradeName || data.legalName;
+        const formattedAddress = data.address?.formatted || data.address || '';
+
+        onChangeBuyer({
+          name: companyName,
+          address: formattedAddress,
+          gstin: cleanGst,
+          phone: data.phone || buyer.phone || '',
+          contactPerson: buyer.contactPerson || '',
+        });
+
+        setBadge({
+          type: 'green',
+          text: `✓ Verified: ${companyName} (${stateName} - ${buyerStateCode === '10' ? 'Local CGST+SGST' : 'Interstate IGST'} applied)`
+        });
+      }
     } catch (err: any) {
-      console.error(err);
-      alert("Invalid GSTIN or not registered on Govt Portal. Please enter details manually.");
-      setError(err.message || "Invalid GSTIN or not registered on Govt Portal. Please enter details manually.");
-      setSuccess(null);
+      console.error('Client-side GST lookup fallback execution:', err);
+      // Fallback: If external API returns 404/500/Quota Error, auto-detect state code and show amber badge
+      const buyerStateCode = cleanGst.substring(0, 2);
+      const stateName = GST_STATE_CODES[buyerStateCode] || 'Unknown State';
+
+      if (buyerStateCode === '10') {
+        onChangeTaxType('local');
+      } else {
+        onChangeTaxType('igst');
+      }
+
+      onChangeBuyer({
+        ...buyer,
+        gstin: cleanGst,
+      });
+
+      setBadge({
+        type: 'amber',
+        text: `✓ Valid GSTIN Format (State Code ${buyerStateCode} - ${stateName}). Enter company name below.`
+      });
     } finally {
       setIsFetchingGst(false);
     }
@@ -114,10 +147,13 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
                 value={buyer.gstin || ''}
                 maxLength={15}
                 onChange={(e) => {
-                  const val = e.target.value.toUpperCase();
+                  const val = e.target.value.toUpperCase().replace(/\s/g, '');
+                  // Clear previous badges instantly upon typing
+                  setBadge(null);
                   onChangeBuyer({ ...buyer, gstin: val });
-                  // Proactive triggers on typing complete 15 chars
-                  if (val.length === 15) {
+                  // Proactive triggers on typing complete 15 chars and matching regex format
+                  const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+                  if (val.length === 15 && gstRegex.test(val)) {
                     handleGSTLookup(val);
                   }
                 }}
@@ -141,17 +177,23 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
             </button>
           </div>
 
-          {/* Feedback states */}
-          {error && (
-            <div className="mt-2.5 flex items-center gap-2 text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100 font-medium">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-          {success && (
-            <div className="mt-2.5 flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-100 font-semibold">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-              <span>{success}</span>
+          {/* Feedback states (Inline Badges) */}
+          {badge && (
+            <div className={`mt-2.5 flex items-center gap-2 text-xs p-2.5 rounded-lg border font-semibold ${
+              badge.type === 'green'
+                ? 'text-emerald-700 bg-emerald-50 border-emerald-100'
+                : badge.type === 'amber'
+                ? 'text-amber-700 bg-amber-50 border-amber-100'
+                : 'text-red-600 bg-red-50 border-red-100'
+            }`}>
+              {badge.type === 'red' ? (
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+              ) : badge.type === 'amber' ? (
+                <HelpCircle className="w-4 h-4 text-amber-505 text-amber-600 flex-shrink-0" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              )}
+              <span>{badge.text}</span>
             </div>
           )}
         </div>
