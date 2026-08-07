@@ -25,7 +25,7 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
   const [success, setSuccess] = useState<string | null>(null);
 
   const handleGSTLookup = async (gstinVal: string) => {
-    const cleanGst = gstinVal.trim().toUpperCase();
+    const cleanGst = gstinVal.trim().toUpperCase().replace(/\s/g, '');
     
     // Validate 15-character GSTIN regex
     const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
@@ -48,9 +48,9 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
         throw new Error(data.error || 'Invalid GSTIN or not registered on Govt Portal. Please enter details manually.');
       }
 
-      // Pre-fill Buyer information
-      const companyName = data.companyName || data.tradeName || data.legalName;
-      const formattedAddress = data.address?.formatted || data.address;
+      // Pre-fill Buyer information, keeping existing values if fallback empty
+      const companyName = data.companyName || data.tradeName || data.legalName || buyer.name || '';
+      const formattedAddress = data.address?.formatted || data.address || buyer.address || '';
       
       onChangeBuyer({
         name: companyName,
@@ -69,7 +69,7 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
       } else {
         onChangeTaxType('igst');
       }
-      setSuccess("✓ Verified via Govt GST Portal");
+      setSuccess(data.message || "✓ Verified via Govt GST Portal");
     } catch (err: any) {
       console.error(err);
       alert("Invalid GSTIN or not registered on Govt Portal. Please enter details manually.");
@@ -114,10 +114,14 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
                 value={buyer.gstin || ''}
                 maxLength={15}
                 onChange={(e) => {
-                  const val = e.target.value.toUpperCase();
+                  const val = e.target.value.toUpperCase().replace(/\s/g, '');
+                  // Clear previous error/success messages instantly upon typing
+                  setError(null);
+                  setSuccess(null);
                   onChangeBuyer({ ...buyer, gstin: val });
-                  // Proactive triggers on typing complete 15 chars
-                  if (val.length === 15) {
+                  // Proactive triggers on typing complete 15 chars and matching regex format
+                  const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+                  if (val.length === 15 && gstRegex.test(val)) {
                     handleGSTLookup(val);
                   }
                 }}
