@@ -20,19 +20,23 @@ type Props = {
 };
 
 export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTaxType }: Props) {
-  const [loading, setLoading] = useState(false);
+  const [isFetchingGst, setIsFetchingGst] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const handleGSTLookup = async (gstinVal: string) => {
     const cleanGst = gstinVal.trim().toUpperCase();
-    if (cleanGst.length !== 15) {
-      setError('GSTIN must be exactly 15 characters long.');
+    
+    // Validate 15-character GSTIN regex
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (!gstRegex.test(cleanGst)) {
+      alert("Invalid GSTIN or not registered on Govt Portal. Please enter details manually.");
+      setError("Invalid GSTIN or not registered on Govt Portal. Please enter details manually.");
       setSuccess(null);
       return;
     }
 
-    setLoading(true);
+    setIsFetchingGst(true);
     setError(null);
     setSuccess(null);
 
@@ -40,40 +44,39 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
       const res = await fetch(`/api/gst-lookup?gstin=${cleanGst}`);
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to lookup GSTIN details.');
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Invalid GSTIN or not registered on Govt Portal. Please enter details manually.');
       }
 
-      if (data.success) {
-        // Pre-fill Buyer information
-        const companyName = data.tradeName || data.legalName;
-        const formattedAddress = data.address.formatted;
-        
-        onChangeBuyer({
-          name: companyName,
-          address: formattedAddress,
-          gstin: cleanGst,
-          phone: data.phone || buyer.phone || '',
-          contactPerson: buyer.contactPerson || '',
-        });
+      // Pre-fill Buyer information
+      const companyName = data.companyName || data.tradeName || data.legalName;
+      const formattedAddress = data.address?.formatted || data.address;
+      
+      onChangeBuyer({
+        name: companyName,
+        address: formattedAddress,
+        gstin: cleanGst,
+        phone: data.phone || buyer.phone || '',
+        contactPerson: buyer.contactPerson || '',
+      });
 
-        // Auto-set Tax Mode based on State Code
-        // Seller state is 10 (Bihar)
-        const buyerStateCode = data.address.stateCode;
-        if (buyerStateCode === '10') {
-          onChangeTaxType('local');
-          setSuccess(`Verified: ${companyName} (Bihar - Local CGST+SGST applied)`);
-        } else {
-          onChangeTaxType('igst');
-          setSuccess(`Verified: ${companyName} (${data.address.state} - Interstate IGST applied)`);
-        }
+      // Auto-set Tax Mode based on State Code
+      // Seller state is 10 (Bihar)
+      // The API returns taxType as 'local' or 'interstate'. Map 'interstate' to 'igst' for the frontend.
+      const buyerStateCode = data.address?.stateCode || cleanGst.substring(0, 2);
+      if (buyerStateCode === '10') {
+        onChangeTaxType('local');
+      } else {
+        onChangeTaxType('igst');
       }
+      setSuccess("✓ Verified via Govt GST Portal");
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Verification failed.');
+      alert("Invalid GSTIN or not registered on Govt Portal. Please enter details manually.");
+      setError(err.message || "Invalid GSTIN or not registered on Govt Portal. Please enter details manually.");
       setSuccess(null);
     } finally {
-      setLoading(false);
+      setIsFetchingGst(false);
     }
   };
 
@@ -123,11 +126,11 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
             </div>
             <button
               type="button"
-              disabled={loading}
+              disabled={isFetchingGst}
               onClick={() => handleGSTLookup(buyer.gstin || '')}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-95 whitespace-nowrap min-w-[130px]"
             >
-              {loading ? (
+              {isFetchingGst ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   <span>Verifying...</span>
