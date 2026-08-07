@@ -5,7 +5,6 @@ export async function GET(req: NextRequest) {
   let cleanGstin = '';
   let stateCode = '';
   let stateName = 'Unknown State';
-  let pan = '';
   let taxType = 'interstate';
 
   try {
@@ -19,10 +18,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Clean and sanitize input gstin: Trim whitespace, remove internal spaces, convert to uppercase.
+    // Clean input GSTIN (trim, uppercase)
     cleanGstin = gstinParam.trim().toUpperCase().replace(/\s/g, '');
 
-    // Check 15-character GSTIN regex
+    // Validate 15-character GSTIN regex
     const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
     const isValidFormat = gstRegex.test(cleanGstin);
 
@@ -33,9 +32,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Extract State Code & PAN
+    // Extract stateCode and taxType
     stateCode = cleanGstin.substring(0, 2);
-    pan = cleanGstin.substring(2, 12);
     stateName = GST_STATE_CODES[stateCode] || 'Unknown State';
     taxType = stateCode === '10' ? 'local' : 'interstate';
 
@@ -44,11 +42,12 @@ export async function GET(req: NextRequest) {
 
     let response: Response | null = null;
     let resData: any = null;
+    let fetchError: any = null;
 
-    // Try Endpoint 1: https://${RAPIDAPI_HOST}/v1/gstin/${cleanGstin}
+    // 1. Fetch live data using Primary Endpoint: https://${process.env.RAPIDAPI_HOST}/v1/gstin/${cleanGstin}/profile
     try {
-      const url1 = `https://${host}/v1/gstin/${cleanGstin}`;
-      response = await fetch(url1, {
+      const urlPrimary = `https://${host}/v1/gstin/${cleanGstin}/profile`;
+      response = await fetch(urlPrimary, {
         method: 'GET',
         headers: {
           'x-rapidapi-key': key,
@@ -60,110 +59,97 @@ export async function GET(req: NextRequest) {
 
       if (response.ok) {
         resData = await response.json();
+      } else {
+        fetchError = `Primary endpoint returned status ${response.status}`;
       }
-    } catch (err) {
-      console.warn('Endpoint 1 query failed, falling back to Endpoint 2...', err);
+    } catch (err: any) {
+      fetchError = err;
+      console.warn('Primary GST endpoint fetch failed, attempting secondary endpoint...', err);
     }
 
-    // Try Endpoint 2: https://${RAPIDAPI_HOST}/v1/gstin/${cleanGstin}/profile
+    // 2. Fetch live data using Secondary Endpoint: https://${process.env.RAPIDAPI_HOST}/v1/gstin/${cleanGstin}
     if (!resData || !response || !response.ok) {
-      const url2 = `https://${host}/v1/gstin/${cleanGstin}/profile`;
-      response = await fetch(url2, {
-        method: 'GET',
-        headers: {
-          'x-rapidapi-key': key,
-          'x-rapidapi-host': host,
-          'Accept': 'application/json',
-        },
-        signal: AbortSignal.timeout(5000), // 5 seconds timeout
-      });
+      try {
+        const urlSecondary = `https://${host}/v1/gstin/${cleanGstin}`;
+        response = await fetch(urlSecondary, {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-key': key,
+            'x-rapidapi-host': host,
+            'Accept': 'application/json',
+          },
+          signal: AbortSignal.timeout(5000), // 5 seconds timeout
+        });
 
-      if (response.ok) {
-        resData = await response.json();
+        if (response.ok) {
+          resData = await response.json();
+        } else {
+          fetchError = `Secondary endpoint returned status ${response.status}`;
+        }
+      } catch (err: any) {
+        fetchError = err;
+        console.warn('Secondary GST endpoint fetch failed...', err);
       }
     }
 
     if (!response || !response.ok || !resData) {
-      throw new Error('RapidAPI request failed');
+      throw new Error(fetchError || 'All live GST endpoints failed to fetch data');
     }
 
     const data = resData.data || resData.result || resData;
-    if (!data) {
-      throw new Error('Empty response from RapidAPI');
-    }
 
-    // Robust response parsing across multiple keys
-    const companyName = data.tradeNam || data.lgnm || data.business_name || data.trade_name || data.legal_name || (data.data && (data.data.tradeNam || data.data.lgnm || data.data.trade_name || data.data.legal_name)) || (data.result && (data.result.legal_name || data.result.trade_name));
+    // Extract Business Name using Deep Key Fallbacks:
+    const companyName = data?.tradeNam || data?.lgnm || data?.data?.tradeNam || data?.data?.lgnm || data?.result?.tradeNam || data?.result?.lgnm || data?.business_name || data?.legal_name;
 
     if (!companyName) {
-      throw new Error('No company name found in the API response payload');
+      throw new Error('Business/Company Name key was missing or not found in the payload schema');
     }
 
-    // Extract Address
-    const rawAddr = data.pradr?.addr || (data.data?.pradr?.addr) || (data.result?.pradr?.addr) || data.pradr || data.address || {};
-    
-    const bno = rawAddr.bno || rawAddr.building_no || rawAddr.buildingNo || '';
-    const bnm = rawAddr.bnm || rawAddr.building_name || '';
+    // Extract Registered Address: Extract from data?.pradr?.addr or data?.data?.pradr?.addr or data?.result?.pradr?.addr
+    const addr = data?.pradr?.addr || data?.data?.pradr?.addr || data?.result?.pradr?.addr || data?.pradr || data?.address || {};
+
+    const bno = addr.bno || '';
+    const bnm = addr.bnm || '';
     const building = [bno, bnm].filter(Boolean).join(' ');
+    const st = addr.st || '';
+    const loc = addr.loc || '';
+    const dst = addr.dst || '';
+    const resolvedStateName = GST_STATE_CODES[stateCode] || addr.stcd || stateName;
+    const pncd = addr.pncd || addr.pincode || addr.pin_code || '';
 
-    const st = rawAddr.st || rawAddr.street || rawAddr.street_name || '';
-    const loc = rawAddr.loc || rawAddr.locality || rawAddr.location || '';
-    const dst = rawAddr.dst || rawAddr.district || rawAddr.city || '';
-    const stcd = rawAddr.stcd || rawAddr.state_code || rawAddr.stateCode || rawAddr.state || '';
-    const pncd = rawAddr.pncd || rawAddr.pincode || rawAddr.pin_code || rawAddr.pin || '';
-
-    const resolvedStateName = GST_STATE_CODES[stateCode] || stcd || stateName;
-
-    const formattedAddress = [building, st, loc, dst, resolvedStateName, pncd]
-      .map((val) => String(val || '').trim())
-      .filter(Boolean)
-      .join(', ');
+    // Format: `${addr.bno || ''} ${addr.bnm || ''}, ${addr.st || ''}, ${addr.loc || ''}, ${addr.dst || ''}, ${stateName} - ${addr.pncd || ''}`
+    // We clean commas and spaces nicely
+    const addressStr = `${bno} ${bnm}, ${st}, ${loc}, ${dst}, ${resolvedStateName} - ${pncd}`;
+    const formattedAddress = addressStr
+      .replace(/\s+/g, ' ')
+      .replace(/,\s*,/g, ',')
+      .replace(/^[\s,]+|[\s,]+$/g, '');
 
     return NextResponse.json({
       success: true,
       companyName,
-      tradeName: companyName,
-      legalName: companyName,
+      address: formattedAddress,
+      stateCode,
+      stateName: resolvedStateName,
       taxType,
-      pan,
+      isLiveGovt: true,
       phone: data.phone || data.mobNum || '',
-      address: {
-        building,
-        street: st,
-        location: loc,
-        pincode: pncd,
-        state: resolvedStateName,
-        stateCode: stateCode,
-        formatted: formattedAddress,
-      },
     });
   } catch (err: any) {
-    console.warn('RapidAPI lookup failed. Triggering Graceful API Fallback...', err);
+    console.error('Government GST Lookup Failure logged in server console:', err);
 
-    // Graceful API Fallback:
-    // If RapidAPI returns 404/500/Quota limit exceeded, extract stateCode (first 2 digits) and PAN (digits 3-12).
-    // Map stateCode to State Name (e.g. '10' -> Bihar).
-    // Set taxType: 'local' (CGST 9% + SGST 9%) if stateCode == '10', else 'interstate' (IGST 18%).
-    // Return JSON: { success: true, isFallback: true, pan, stateCode, stateName, taxType, message: "✓ State Code Matched (Bihar - Code 10)" }
+    // Graceful API Fallback (Returns fallback state so user can type, but avoids throwing a hard error)
     if (cleanGstin) {
       return NextResponse.json({
         success: true,
         isFallback: true,
-        pan,
+        isLiveGovt: false,
+        companyName: '',
+        address: '',
         stateCode,
         stateName,
         taxType,
         message: `✓ State Code Matched (${stateName} - Code ${stateCode})`,
-        companyName: '',
-        address: {
-          building: '',
-          street: '',
-          location: '',
-          pincode: '',
-          state: stateName,
-          stateCode: stateCode,
-          formatted: '',
-        },
       });
     }
 

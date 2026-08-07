@@ -45,19 +45,35 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
         throw new Error(data.error || 'Lookup failed');
       }
 
-      const buyerStateCode = data.address?.stateCode || cleanGst.substring(0, 2);
-      const stateName = data.address?.state || GST_STATE_CODES[buyerStateCode] || 'Unknown State';
+      const buyerStateCode = data.stateCode || cleanGst.substring(0, 2);
+      const stateName = data.stateName || GST_STATE_CODES[buyerStateCode] || 'Unknown State';
 
       // Auto-set Tax Mode based on State Code
-      // Seller state is 10 (Bihar)
       if (buyerStateCode === '10') {
         onChangeTaxType('local');
       } else {
         onChangeTaxType('igst');
       }
 
-      if (data.isFallback) {
-        // On Graceful Fallback: Show Amber Badge and preserve manually entered details
+      if (data.isLiveGovt) {
+        // Live Govt Success (Green Badge): Instantly populate form values and set green verified badge
+        const companyName = data.companyName;
+        const address = data.address; // Flat string address
+
+        onChangeBuyer({
+          name: companyName,
+          address: address,
+          gstin: cleanGst,
+          phone: data.phone || buyer.phone || '',
+          contactPerson: buyer.contactPerson || '',
+        });
+
+        setBadge({
+          type: 'green',
+          text: `✓ Verified via Govt GST Portal: ${companyName}`
+        });
+      } else {
+        // Fallback state (Amber Badge): Keep existing manually typed data
         onChangeBuyer({
           ...buyer,
           gstin: cleanGst,
@@ -69,27 +85,10 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
           type: 'amber',
           text: `✓ Valid GSTIN Format (State Code ${buyerStateCode} - ${stateName}). Enter company name below.`
         });
-      } else {
-        // On API Success: Show Green Badge and auto-fill details
-        const companyName = data.companyName || data.tradeName || data.legalName;
-        const formattedAddress = data.address?.formatted || data.address || '';
-
-        onChangeBuyer({
-          name: companyName,
-          address: formattedAddress,
-          gstin: cleanGst,
-          phone: data.phone || buyer.phone || '',
-          contactPerson: buyer.contactPerson || '',
-        });
-
-        setBadge({
-          type: 'green',
-          text: `✓ Verified: ${companyName} (${stateName} - ${buyerStateCode === '10' ? 'Local CGST+SGST' : 'Interstate IGST'} applied)`
-        });
       }
     } catch (err: any) {
       console.error('Client-side GST lookup fallback execution:', err);
-      // Fallback: If external API returns 404/500/Quota Error, auto-detect state code and show amber badge
+      // Client Fallback: If external API returns 404/500/Quota Error, auto-detect state code and show amber badge
       const buyerStateCode = cleanGst.substring(0, 2);
       const stateName = GST_STATE_CODES[buyerStateCode] || 'Unknown State';
 
@@ -177,7 +176,7 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
             </button>
           </div>
 
-          {/* Feedback states (Inline Badges) */}
+          {/* Feedback states (Inline Status Badges) */}
           {badge && (
             <div className={`mt-2.5 flex items-center gap-2 text-xs p-2.5 rounded-lg border font-semibold ${
               badge.type === 'green'
@@ -189,7 +188,7 @@ export default function BuyerSection({ buyer, onChangeBuyer, taxType, onChangeTa
               {badge.type === 'red' ? (
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
               ) : badge.type === 'amber' ? (
-                <HelpCircle className="w-4 h-4 text-amber-505 text-amber-600 flex-shrink-0" />
+                <HelpCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
               ) : (
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
               )}
