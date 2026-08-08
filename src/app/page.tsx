@@ -51,8 +51,19 @@ export default function Home() {
   const [pdfUrl, setPdfUrl] = useState<string | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const [pdfModule, setPdfModule] = useState<any>(null);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+
+  // Load PDF module on client-side mount
+  useEffect(() => {
+    import('@react-pdf/renderer').then((module) => {
+      setPdfModule(module);
+    });
+  }, []);
 
   const fetchNextId = async () => {
     try {
@@ -68,29 +79,101 @@ export default function Home() {
     }
   };
 
-  const saveQuotationToDb = async (payload: QuotationFormData) => {
-    try {
-      const res = await fetch('/api/quotations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.record) {
-          setQuotationNumber(data.record.quotationNumber);
-          return data.record.quotationNumber;
-        }
-      }
-    } catch (err) {
-      console.error('Error saving quotation to DB:', err);
+  // Pre-compile PDF in the background whenever data changes (debounced to avoid blocking main thread)
+  useEffect(() => {
+    if (!pdfModule || items.length === 0 || !buyer.name.trim()) {
+      setPdfBlob(null);
+      return;
     }
-    return null;
-  };
 
-  const handleSaveOnly = async () => {
+    const compilePdf = async () => {
+      setPdfLoading(true);
+      try {
+        const payload: QuotationFormData = {
+          quotationNumber,
+          quotationDate,
+          buyer,
+          items,
+          taxType,
+          bankDetails,
+          authorisedSignatory,
+          deliveryNote,
+          modeTermsOfPayment,
+          referenceNo,
+          otherReferences,
+          buyerOrderNo,
+          buyerOrderDate,
+          dispatchDocNo,
+          deliveryNoteDate,
+          dispatchedThrough,
+          destination,
+          termsOfDelivery,
+          logoPath: '/jmk-logo.png' // Use client public path
+        };
+
+        const QuotationPDF = (await import('../components/QuotationPDF')).default;
+        const blob = await pdfModule.pdf(<QuotationPDF data={payload} />).toBlob();
+        setPdfBlob(blob);
+      } catch (err) {
+        console.error('Error pre-compiling PDF:', err);
+      } finally {
+        setPdfLoading(false);
+      }
+    };
+
+    const handler = setTimeout(compilePdf, 800);
+    return () => clearTimeout(handler);
+  }, [
+    pdfModule,
+    quotationNumber,
+    quotationDate,
+    buyer,
+    items,
+    taxType,
+    bankDetails,
+    authorisedSignatory,
+    deliveryNote,
+    modeTermsOfPayment,
+    referenceNo,
+    otherReferences,
+    buyerOrderNo,
+    buyerOrderDate,
+    dispatchDocNo,
+    deliveryNoteDate,
+    dispatchedThrough,
+    destination,
+    termsOfDelivery
+  ]);
+
+  // Reset save status on form input changes to represent "dirty" state
+  useEffect(() => {
+    setSaveStatus('idle');
+  }, [
+    quotationNumber,
+    quotationDate,
+    buyer,
+    items,
+    taxType,
+    deliveryNote,
+    modeTermsOfPayment,
+    referenceNo,
+    otherReferences,
+    buyerOrderNo,
+    buyerOrderDate,
+    dispatchDocNo,
+    deliveryNoteDate,
+    dispatchedThrough,
+    destination,
+    termsOfDelivery
+  ]);
+
+  const handleGenerateAndSave = async () => {
     if (!buyer.name.trim()) {
       alert('Please enter or verify the Buyer Name.');
+      return;
+    }
+    if (!buyer.address.trim()) {
+      alert('Please enter the Billing Address.');
       return;
     }
     if (items.length === 0) {
@@ -98,41 +181,176 @@ export default function Home() {
       return;
     }
 
-    setIsSaving(true);
-    try {
-      const payload: QuotationFormData = {
-        quotationNumber,
-        quotationDate,
-        buyer,
-        items,
-        taxType,
-        bankDetails,
-        authorisedSignatory,
-        deliveryNote,
-        modeTermsOfPayment,
-        referenceNo,
-        otherReferences,
-        buyerOrderNo,
-        buyerOrderDate,
-        dispatchDocNo,
-        deliveryNoteDate,
-        dispatchedThrough,
-        destination,
-        termsOfDelivery,
-      };
+    setIsGenerating(true);
+    setSaveStatus('saving');
 
-      const finalNumber = await saveQuotationToDb(payload);
-      if (finalNumber) {
-        alert(`Quotation ${finalNumber} saved successfully to database!`);
-        fetchNextId();
-      } else {
-        alert('Failed to save quotation.');
+    const currentPayload: QuotationFormData = {
+      quotationNumber,
+      quotationDate,
+      buyer,
+      items,
+      taxType,
+      bankDetails,
+      authorisedSignatory,
+      deliveryNote,
+      modeTermsOfPayment,
+      referenceNo,
+      otherReferences,
+      buyerOrderNo,
+      buyerOrderDate,
+      dispatchDocNo,
+      deliveryNoteDate,
+      dispatchedThrough,
+      destination,
+      termsOfDelivery,
+      logoPath: '/jmk-logo.png'
+    };
+
+    // 1. Instantly trigger client-side PDF download using pre-compiled blob or compile on-demand
+    try {
+      let downloadBlob = pdfBlob;
+
+      if (!downloadBlob || pdfLoading) {
+        // If not pre-compiled, generate on-demand client-side
+        if (pdfModule) {
+          const QuotationPDF = (await import('../components/QuotationPDF')).default;
+          downloadBlob = await pdfModule.pdf(<QuotationPDF data={currentPayload} />).toBlob();
+        } else {
+          // If module is not loaded, load and compile
+          const module = await import('@react-pdf/renderer');
+          const QuotationPDF = (await import('../components/QuotationPDF')).default;
+          downloadBlob = await module.pdf(<QuotationPDF data={currentPayload} />).toBlob();
+        }
       }
-    } catch (err: any) {
-      alert('Error: ' + err.message);
-    } finally {
-      setIsSaving(false);
+
+      if (downloadBlob) {
+        const url = window.URL.createObjectURL(downloadBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        const bName = buyer.name || 'Estimate';
+        const sanitizedBName = bName.replace(/\s+/g, '_');
+        a.download = `JMK_Quotation_${sanitizedBName}_${quotationNumber}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        throw new Error('Failed to create PDF blob');
+      }
+    } catch (pdfErr) {
+      console.error('Client PDF download failed, falling back to server route:', pdfErr);
+      try {
+        const res = await fetch('/api/generate-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentPayload),
+        });
+        if (!res.ok) throw new Error('Server PDF route failed');
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const bName = buyer.name || 'Estimate';
+        const sanitizedBName = bName.replace(/\s+/g, '_');
+        a.download = `JMK_Quotation_${sanitizedBName}_${quotationNumber}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } catch (fallbackErr: any) {
+        setSaveStatus('error');
+        alert('Error generating PDF: ' + fallbackErr.message);
+        setIsGenerating(false);
+        return;
+      }
     }
+
+    // 2. Save to localStorage immediately as an offline instant fallback before network execution
+    const subtotal = Number(items.reduce((sum, it) => sum + (it.amount || 0), 0).toFixed(2));
+    let taxAmount = 0;
+    if (taxType === 'igst') {
+      taxAmount = Number((subtotal * 0.18).toFixed(2));
+    } else {
+      const cgst = Number((subtotal * 0.09).toFixed(2));
+      const sgst = Number((subtotal * 0.09).toFixed(2));
+      taxAmount = Number((cgst + sgst).toFixed(2));
+    }
+    const grandTotal = Number((subtotal + taxAmount).toFixed(2));
+    const totalWeightKg = Number(items.reduce((sum, it) => {
+      const qty = it.quantity || 0;
+      const unitWt = it.unitWeightKg ?? it.unitWeight ?? 0;
+      return sum + (qty * unitWt);
+    }, 0).toFixed(2));
+
+    const offlineRecord = {
+      id: quotationNumber,
+      quotationNumber,
+      date: quotationDate,
+      buyerName: buyer.name,
+      buyerGstin: buyer.gstin || '',
+      totalWeightKg,
+      subtotal,
+      taxAmount,
+      grandTotal,
+      lineItems: items,
+      pdfGeneratedAt: new Date().toISOString(),
+      formData: currentPayload
+    };
+
+    try {
+      const localQuotesStr = localStorage.getItem('jmk_offline_quotations');
+      const localQuotes = localQuotesStr ? JSON.parse(localQuotesStr) : [];
+      // Remove any duplicate key
+      const filteredQuotes = localQuotes.filter((q: any) => q.quotationNumber !== quotationNumber);
+      filteredQuotes.unshift(offlineRecord);
+      localStorage.setItem('jmk_offline_quotations', JSON.stringify(filteredQuotes));
+      setSaveStatus('success');
+    } catch (localErr) {
+      console.error('Error saving to localStorage:', localErr);
+    }
+
+    setIsGenerating(false);
+
+    // 3. Simultaneously fire a non-blocking asynchronous POST request to /api/quotations in the background
+    fetch('/api/quotations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentPayload),
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.record) {
+            // Update client state and localStorage if final number is different
+            const finalNum = data.record.quotationNumber;
+            if (finalNum !== quotationNumber) {
+              setQuotationNumber(finalNum);
+              try {
+                const localQuotesStr = localStorage.getItem('jmk_offline_quotations');
+                if (localQuotesStr) {
+                  const localQuotes = JSON.parse(localQuotesStr);
+                  const recordIdx = localQuotes.findIndex((q: any) => q.quotationNumber === quotationNumber);
+                  if (recordIdx > -1) {
+                    localQuotes[recordIdx].quotationNumber = finalNum;
+                    localQuotes[recordIdx].id = finalNum;
+                    localQuotes[recordIdx].formData.quotationNumber = finalNum;
+                    localStorage.setItem('jmk_offline_quotations', JSON.stringify(localQuotes));
+                  }
+                }
+              } catch (localErr) {
+                console.error('Failed to update localStorage index:', localErr);
+              }
+            }
+          }
+        } else {
+          console.error('Background database save failed:', res.statusText);
+        }
+        // Refresh next ID in the background
+        fetchNextId();
+      })
+      .catch((err) => {
+        console.error('Background database sync network error:', err);
+      });
   };
 
   useEffect(() => {
@@ -198,82 +416,7 @@ export default function Home() {
 
   const updateItem = (it: QuotationItem) => setItems((s) => s.map((x) => (x.id === it.id ? it : x)));
 
-  const handleGenerate = async () => {
-    if (!buyer.name.trim()) {
-      alert('Please enter or verify the Buyer Name.');
-      return;
-    }
-    if (!buyer.address.trim()) {
-      alert('Please enter the Billing Address.');
-      return;
-    }
-    if (items.length === 0) {
-      alert('Please add at least one product to the quotation.');
-      return;
-    }
 
-    setIsGenerating(true);
-    try {
-      const payload: QuotationFormData = {
-        quotationNumber,
-        quotationDate,
-        buyer,
-        items,
-        taxType,
-        bankDetails,
-        authorisedSignatory,
-        deliveryNote,
-        modeTermsOfPayment,
-        referenceNo,
-        otherReferences,
-        buyerOrderNo,
-        buyerOrderDate,
-        dispatchDocNo,
-        deliveryNoteDate,
-        dispatchedThrough,
-        destination,
-        termsOfDelivery,
-      };
-
-      // Automatically save to database before printing PDF
-      const finalNumber = await saveQuotationToDb(payload);
-      if (finalNumber) {
-        payload.quotationNumber = finalNumber;
-      }
-
-      const res = await fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const err = await res.text();
-        alert('Failed to generate PDF: ' + err);
-        return;
-      }
-
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const bName = buyer.name || 'Estimate';
-      const sanitizedBName = bName.replace(/\s+/g, '_');
-      a.download = `JMK_Quotation_${sanitizedBName}_${payload.quotationNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      
-      // Refresh the sequence number for the next quote
-      fetchNextId();
-    } catch (e: any) {
-      console.error(e);
-      alert('Error generating PDF: ' + e.message);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const totalQuotationWeight = calculateTotalWeight(items);
 
@@ -618,44 +761,46 @@ export default function Home() {
               <SummarySection 
                 items={items} 
                 taxType={taxType} 
-                onDownloadPDF={handleGenerate}
+                onDownloadPDF={handleGenerateAndSave}
                 isDownloading={isGenerating}
+                saveStatus={saveStatus}
               />
               
-              <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-end gap-3 flex-wrap">
-                <button
-                  type="button"
-                  onClick={handleSaveOnly}
-                  disabled={isSaving || items.length === 0}
-                  className="px-6 py-3 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-400 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed active:scale-95 text-sm"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Saving to DB...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Landmark className="w-4 h-4" />
-                      <span>Save Quotation to DB</span>
-                    </>
+              <div className="mt-6 pt-4 border-t border-gray-150 flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Inline Status Badge */}
+                <div>
+                  {saveStatus === 'success' && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold animate-fade-in">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span>✓ PDF Downloaded & Auto-Saved to Database</span>
+                    </span>
                   )}
-                </button>
+                  {saveStatus === 'saving' && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-150 text-blue-800 text-xs font-bold">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      <span>Syncing with Cloud Database...</span>
+                    </span>
+                  )}
+                  {saveStatus === 'error' && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs font-bold">
+                      <span>⚠ Offline Fallback: Saved to Local Storage</span>
+                    </span>
+                  )}
+                </div>
 
                 <button
-                  onClick={handleGenerate}
-                  disabled={isGenerating}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed active:scale-95 text-sm"
+                  onClick={handleGenerateAndSave}
+                  disabled={isGenerating || items.length === 0}
+                  className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-450 text-white font-extrabold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed active:scale-95 text-sm uppercase tracking-wider font-bold"
                 >
                   {isGenerating ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Downloading PDF...</span>
+                      <span>Generating PDF...</span>
                     </>
                   ) : (
                     <>
-                      <FileDown className="w-4 h-4" />
-                      <span>Generate & Download GST Quotation PDF</span>
+                      <span>⚡ Generate & Download GST Quotation PDF</span>
                     </>
                   )}
                 </button>

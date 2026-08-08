@@ -34,28 +34,83 @@ export interface QuotationRecord {
 }
 
 export default function AdminDashboard() {
-  const [quotations, setQuotations] = useState<QuotationRecord[]>([]);
+  const [quotations, setQuotations] = useState<(QuotationRecord & { isOffline?: boolean })[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<QuotationRecord | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   // Fetch quotations on mount
   const fetchQuotations = async () => {
     setLoading(true);
+    
+    // Create AbortController to abort database fetch if it exceeds 3 seconds
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    let dbQuotations: QuotationRecord[] = [];
+    let dbSuccess = false;
+
     try {
-      const res = await fetch('/api/quotations');
+      const res = await fetch('/api/quotations', { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (res.ok) {
         const data = await res.json();
-        if (data.success) {
-          setQuotations(data.quotations || []);
+        if (data.success && Array.isArray(data.quotations)) {
+          dbQuotations = data.quotations;
+          dbSuccess = true;
+          setIsOfflineMode(false);
         }
       }
-    } catch (err) {
-      console.error('Error fetching quotations:', err);
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      console.error('Error fetching quotations (offline or timeout):', err);
+      setIsOfflineMode(true);
     }
+
+    // Load offline quotations from localStorage
+    let localQuotations: QuotationRecord[] = [];
+    try {
+      const localQuotesStr = localStorage.getItem('jmk_offline_quotations');
+      if (localQuotesStr) {
+        localQuotations = JSON.parse(localQuotesStr);
+      }
+    } catch (localErr) {
+      console.error('Error reading offline quotations from localStorage:', localErr);
+    }
+
+    // Gracefully merge database records and offline records
+    const mergedMap = new Map<string, QuotationRecord & { isOffline?: boolean }>();
+
+    // Mark local records as offline initially
+    localQuotations.forEach((item) => {
+      if (item.quotationNumber) {
+        mergedMap.set(item.quotationNumber, { ...item, isOffline: true });
+      }
+    });
+
+    // Overwrite with database records if retrieved successfully
+    if (dbSuccess) {
+      dbQuotations.forEach((item) => {
+        if (item.quotationNumber) {
+          mergedMap.set(item.quotationNumber, { ...item, isOffline: false });
+        }
+      });
+    }
+
+    // Sort merged records by date descending
+    const mergedList = Array.from(mergedMap.values()).sort((a, b) => {
+      const dateA = new Date(a.date || a.pdfGeneratedAt || 0).getTime();
+      const dateB = new Date(b.date || b.pdfGeneratedAt || 0).getTime();
+      if (dateB !== dateA) return dateB - dateA;
+      return b.quotationNumber.localeCompare(a.quotationNumber);
+    });
+
+    setQuotations(mergedList);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -102,6 +157,19 @@ export default function AdminDashboard() {
       return;
     }
 
+    // Immediately remove from localStorage
+    try {
+      const localQuotesStr = localStorage.getItem('jmk_offline_quotations');
+      if (localQuotesStr) {
+        const localQuotes = JSON.parse(localQuotesStr);
+        const filtered = localQuotes.filter((q: any) => q.quotationNumber !== quotationNumber);
+        localStorage.setItem('jmk_offline_quotations', JSON.stringify(filtered));
+      }
+    } catch (e) {
+      console.error('Failed to delete from localStorage', e);
+    }
+
+    // Attempt deleting from database
     try {
       const res = await fetch(`/api/quotations?id=${encodeURIComponent(quotationNumber)}`, {
         method: 'DELETE',
@@ -110,16 +178,22 @@ export default function AdminDashboard() {
         const data = await res.json();
         if (data.success) {
           alert('Quotation deleted successfully!');
-          fetchQuotations();
-          if (selectedQuote?.quotationNumber === quotationNumber) {
-            setSelectedQuote(null);
-          }
         } else {
-          alert('Delete failed: ' + data.error);
+          console.warn('DB delete warning (might be offline/missing):', data.error);
+          alert('Quotation deleted locally!');
         }
+      } else {
+        alert('Quotation deleted locally! (Database could not be reached)');
       }
     } catch (err: any) {
-      alert('Error: ' + err.message);
+      console.error('Error deleting from DB:', err);
+      alert('Quotation deleted locally! (Database connection offline)');
+    }
+
+    // Refresh UI
+    fetchQuotations();
+    if (selectedQuote?.quotationNumber === quotationNumber) {
+      setSelectedQuote(null);
     }
   };
 
@@ -129,14 +203,23 @@ export default function AdminDashboard() {
   const totalWeightTonnes = quotations.reduce((sum, q) => sum + (q.totalWeightKg || 0), 0) / 1000;
   const activeClients = Array.from(new Set(quotations.map(q => q.buyerName.trim().toLowerCase()))).length;
 
-  // Search Filter
+  // Search & Date Range Filter
   const filteredQuotations = quotations.filter(q => {
     const term = searchQuery.toLowerCase();
-    return (
+    const matchesSearch = 
       q.quotationNumber.toLowerCase().includes(term) ||
       q.buyerName.toLowerCase().includes(term) ||
-      (q.buyerGstin || '').toLowerCase().includes(term)
-    );
+      (q.buyerGstin || '').toLowerCase().includes(term);
+
+    let matchesDate = true;
+    if (startDate) {
+      matchesDate = matchesDate && q.date >= startDate;
+    }
+    if (endDate) {
+      matchesDate = matchesDate && q.date <= endDate;
+    }
+
+    return matchesSearch && matchesDate;
   });
 
   return (
@@ -222,24 +305,68 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        {/* Offline Fallback Banner */}
+        {isOfflineMode && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-semibold flex items-center gap-2.5 shadow-sm animate-fade-in">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+            <span>⚠️ MongoDB is offline or slow. Gracefully displaying merged local records from offline storage.</span>
+          </div>
+        )}
+
         {/* Database Search & Filter */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-8">
-          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col lg:flex-row justify-between items-center gap-4">
             <h2 className="font-extrabold text-sm text-gray-700 uppercase tracking-wider flex items-center gap-2">
               <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
               <span>Saved Quotations Database</span>
             </h2>
 
-            {/* Search Input */}
-            <div className="relative w-full md:w-80">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by quote #, client, GSTIN..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 w-full border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-semibold text-gray-700"
-              />
+            {/* Quick Filters Group */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+              {/* Date Filters */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-gray-700"
+                  title="Start Date"
+                />
+                <span className="text-xs text-gray-400 font-bold">to</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-gray-700"
+                  title="End Date"
+                />
+              </div>
+
+              {/* Search Input */}
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search quote #, client, GSTIN..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 pr-4 py-2 w-full border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-semibold text-gray-750"
+                />
+              </div>
+
+              {/* Clear button if any filter is active */}
+              {(searchQuery || startDate || endDate) && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStartDate('');
+                    setEndDate('');
+                  }}
+                  className="text-xs text-red-650 hover:text-red-750 font-bold hover:underline cursor-pointer flex-shrink-0"
+                >
+                  Clear Filters
+                </button>
+              )}
             </div>
           </div>
 
@@ -270,7 +397,16 @@ export default function AdminDashboard() {
                 <tbody className="divide-y divide-gray-250/50 bg-white font-semibold text-gray-750">
                   {filteredQuotations.map((quote) => (
                     <tr key={quote.quotationNumber} className="hover:bg-gray-50/40 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-blue-700">{quote.quotationNumber}</td>
+                      <td className="py-3.5 px-4 font-bold text-blue-700">
+                        <div className="flex flex-col gap-0.5">
+                          <span>{quote.quotationNumber}</span>
+                          {quote.isOffline ? (
+                            <span className="inline-flex items-center w-fit px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wide">Local Only</span>
+                          ) : (
+                            <span className="inline-flex items-center w-fit px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-250 uppercase tracking-wide">Synced</span>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-3.5 px-4 text-gray-500">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5 text-gray-400" />
