@@ -17,7 +17,21 @@ import {
   Briefcase
 } from 'lucide-react';
 import HeaderSection from '../../components/HeaderSection';
-import { QuotationRecord } from '../../lib/db';
+
+export interface QuotationRecord {
+  id: string;
+  quotationNumber: string;
+  date: string;
+  buyerName: string;
+  buyerGstin: string;
+  totalWeightKg: number;
+  subtotal: number;
+  taxAmount: number;
+  grandTotal: number;
+  lineItems: any[];
+  pdfGeneratedAt: string;
+  formData: any;
+}
 
 export default function AdminDashboard() {
   const [quotations, setQuotations] = useState<QuotationRecord[]>([]);
