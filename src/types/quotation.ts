@@ -12,6 +12,7 @@ export interface Product {
   photoUrl?: string;
   link?: string;
   unitWeight?: number;
+  unitWeightKg?: number;
 }
 
 export type CatalogueItem = Product;
@@ -34,6 +35,7 @@ export interface Item {
   photoUrl?: string;
   link?: string;
   unitWeight?: number;
+  unitWeightKg?: number;
   totalWeight?: number;
 }
 

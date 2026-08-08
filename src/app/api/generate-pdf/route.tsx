@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import QuotationPDF from '../../../components/QuotationPDF';
 import { QuotationFormData } from '../../../types/quotation';
+import { calculateItemAmount, calculateItemWeight } from '../../../utils/calculations';
 import path from 'path';
 
 export async function POST(req: NextRequest) {
@@ -18,15 +19,17 @@ export async function POST(req: NextRequest) {
 
     // Process and validate items to ensure amount and weight values are computed
     const items = data.items.map((it) => {
-      const quantity = Number(it.quantity || 0);
-      const rate = Number(it.rate || 0);
-      const unitWeight = it.unitWeight ? Number(it.unitWeight || 0) : undefined;
+      const unitWeight = it.unitWeightKg ?? it.unitWeight ?? 0;
+      const processedItem = {
+        ...it,
+        unitWeightKg: unitWeight,
+        unitWeight: unitWeight,
+      };
       
       return {
-        ...it,
-        amount: Number((quantity * rate).toFixed(2)),
-        unitWeight,
-        totalWeight: unitWeight ? Number((quantity * unitWeight).toFixed(2)) : undefined,
+        ...processedItem,
+        totalWeight: calculateItemWeight(processedItem),
+        amount: calculateItemAmount(processedItem),
       };
     });
 

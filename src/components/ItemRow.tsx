@@ -8,103 +8,155 @@ type Props = {
   index: number;
   onChange?: (item: Item) => void;
   onRemove?: (id: string) => void;
+  onProductClick?: (productId: string) => void;
 };
 
-export default function ItemRow({ item, index, onChange, onRemove }: Props) {
-  const hasWeight = item.unitWeight && item.unitWeight > 0;
+export default function ItemRow({ item, index, onChange, onRemove, onProductClick }: Props) {
+  const unitWeight = item.unitWeightKg ?? item.unitWeight ?? 0;
   const rowWeight = calculateItemWeight(item);
+  const itemAmount = calculateItemAmount(item);
 
   const handleQtyChange = (val: string) => {
     const qty = Math.max(0, Number(val));
-    const amt = Number((qty * item.rate).toFixed(2));
-    const totalWt = item.unitWeight ? Number((qty * item.unitWeight).toFixed(2)) : undefined;
+    const totalWt = Number((qty * unitWeight).toFixed(2));
 
-    onChange?.({
+    const updatedItem = {
       ...item,
       quantity: qty,
-      amount: amt,
       totalWeight: totalWt
+    };
+
+    onChange?.({
+      ...updatedItem,
+      amount: calculateItemAmount(updatedItem)
     });
   };
 
   const handleRateChange = (val: string) => {
     const rate = Math.max(0, Number(val));
-    const amt = Number((item.quantity * rate).toFixed(2));
+    const updatedItem = {
+      ...item,
+      rate
+    };
 
     onChange?.({
-      ...item,
-      rate,
-      amount: amt
+      ...updatedItem,
+      amount: calculateItemAmount(updatedItem)
     });
+  };
+
+  const handleUnitChange = (val: string) => {
+    const updatedItem = {
+      ...item,
+      unit: val
+    };
+
+    onChange?.({
+      ...updatedItem,
+      amount: calculateItemAmount(updatedItem)
+    });
+  };
+
+  // Determine rate placeholder prefix/suffix based on selected Unit
+  const getRateLabel = () => {
+    const unitUpper = (item.unit || '').toUpperCase();
+    if (unitUpper === 'KG') return '₹/KG';
+    if (unitUpper === 'MTR') return '₹/MTR';
+    return '₹/Pc';
   };
 
   return (
     <>
       {/* Desktop Grid View (>= 640px) */}
       <div className="hidden sm:grid grid-cols-12 gap-2 items-center p-3 border-b hover:bg-gray-50/50 transition-colors">
-        <div className="col-span-1 text-center font-semibold text-gray-500 text-xs">{index + 1}</div>
+        {/* Column 1: Index (#) */}
+        <div className="col-span-1 text-center font-bold text-gray-500 text-xs">{index + 1}</div>
         
-        {/* Description column with active links and weight badges */}
-        <div className="col-span-4 flex flex-col">
-          <a 
-            href={item.photoUrl || item.link} 
-            target="_blank" 
-            rel="noreferrer" 
-            className="text-blue-700 hover:text-blue-900 font-bold hover:underline text-sm flex items-center gap-1 cursor-pointer"
+        {/* Column 2: Description of Goods (with size) */}
+        <div className="col-span-3 flex flex-col min-w-0">
+          <button 
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              if (item.productId) onProductClick?.(item.productId);
+            }}
+            className="text-left text-blue-700 hover:text-blue-900 font-bold hover:underline text-sm flex items-center gap-1 cursor-pointer truncate bg-transparent border-none p-0 outline-none focus:outline-none"
+            title="Click to view details & specifications"
           >
-            <span>{item.productName}</span>
-            <ExternalLink className="w-3 h-3 text-gray-400" />
-          </a>
-          
-          {hasWeight ? (
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-[10px] font-semibold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-150">
-                Unit Wt: {item.unitWeight} kg
-              </span>
-              <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">
-                Total Wt: {rowWeight.toLocaleString('en-IN')} kg
-              </span>
-            </div>
-          ) : null}
+            <span className="truncate">{item.productName}</span>
+            <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
+          </button>
+          {item.category && (
+            <span className="text-[10px] text-gray-400 font-medium">
+              {item.category}
+            </span>
+          )}
         </div>
 
-        {/* HSN */}
+        {/* Column 3: HSN Code */}
         <div className="col-span-1 text-center text-xs font-semibold text-gray-650">{item.hsn}</div>
         
-        {/* Unit */}
-        <div className="col-span-1 text-center text-xs font-medium text-gray-500">{item.unit}</div>
+        {/* Column 4: Unit (KG / PCS / MTR) Dropdown */}
+        <div className="col-span-1 text-center">
+          <select
+            value={item.unit}
+            onChange={(e) => handleUnitChange(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg py-1 px-1 text-center text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white cursor-pointer"
+          >
+            <option value="PCS">PCS</option>
+            <option value="KG">KG</option>
+            <option value="MTR">MTR</option>
+          </select>
+        </div>
         
-        {/* Qty Input */}
+        {/* Column 5: Quantity / Nos Input */}
         <div className="col-span-1 text-center">
           <input
             type="number"
             min={0}
             value={item.quantity === 0 ? '' : item.quantity}
             onChange={(e) => handleQtyChange(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg py-1 px-1.5 text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white"
+            className="w-full border border-gray-300 rounded-lg py-1 px-1 text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white"
           />
         </div>
+
+        {/* Column 6: Unit Wt (KG/Pc) (Readonly Badge) */}
+        <div className="col-span-1 text-center">
+          <span className="inline-block text-[11px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-250">
+            {unitWeight.toFixed(1)} KG
+          </span>
+        </div>
+
+        {/* Column 7: Total Weight (KG) = Quantity * UnitWt */}
+        <div className="col-span-1 text-center">
+          <span className="inline-block text-[11px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100">
+            {rowWeight.toFixed(1)} KG
+          </span>
+        </div>
         
-        {/* Rate Input */}
-        <div className="col-span-2 text-right">
+        {/* Column 8: Rate Input (₹ per KG or ₹ per Piece) */}
+        <div className="col-span-1 text-right">
           <div className="relative">
-            <span className="absolute left-2.5 top-1.5 text-[10px] font-bold text-gray-400">₹</span>
+            <span className="absolute left-1 top-2 text-[8px] font-extrabold text-gray-400 bg-gray-100/90 px-0.5 rounded uppercase">
+              {getRateLabel()}
+            </span>
             <input
               type="number"
               min={0}
+              step="any"
               value={item.rate === 0 ? '' : item.rate}
               onChange={(e) => handleRateChange(e.target.value)}
-              className="pl-5 pr-2 py-1 w-full text-right border border-gray-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white"
+              className="pl-8 pr-1 py-1 w-full text-right border border-gray-300 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white"
             />
           </div>
         </div>
         
-        {/* Amount Display */}
+        {/* Column 9: Line Amount (₹) */}
         <div className="col-span-1 text-right font-extrabold text-gray-800 text-sm">
-          ₹{calculateItemAmount(item).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          ₹{itemAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
         
-        {/* Action Button */}
+        {/* Column 10: Action (Delete) */}
         <div className="col-span-1 text-center">
           <button 
             onClick={() => onRemove?.(item.id)}
@@ -121,15 +173,25 @@ export default function ItemRow({ item, index, onChange, onRemove }: Props) {
         <div className="flex justify-between items-start gap-2">
           <div className="flex items-start gap-2 min-w-0">
             <span className="text-[10px] font-bold text-gray-500 bg-gray-100 rounded px-1.5 py-0.5 mt-0.5">#{index + 1}</span>
-            <a 
-              href={item.photoUrl || item.link} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="text-blue-700 hover:text-blue-900 font-bold hover:underline text-sm flex items-center gap-1 cursor-pointer break-words min-w-0"
-            >
-              <span>{item.productName}</span>
-              <ExternalLink className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-            </a>
+            <div className="flex flex-col min-w-0">
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (item.productId) onProductClick?.(item.productId);
+                }}
+                className="text-left text-blue-700 hover:text-blue-900 font-bold hover:underline text-sm flex items-center gap-1 cursor-pointer break-words min-w-0 bg-transparent border-none p-0 outline-none focus:outline-none"
+                title="Click to view details & specifications"
+              >
+                <span>{item.productName}</span>
+                <ExternalLink className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              </button>
+              {item.category && (
+                <span className="text-[10px] text-gray-400 font-medium mt-0.5">
+                  {item.category}
+                </span>
+              )}
+            </div>
           </div>
           <button 
             onClick={() => onRemove?.(item.id)}
@@ -140,30 +202,37 @@ export default function ItemRow({ item, index, onChange, onRemove }: Props) {
           </button>
         </div>
 
-        {/* Specs & HSN & Unit row */}
+        {/* Specs & HSN & Weight Badges */}
         <div className="flex flex-wrap gap-1.5 text-[10px]">
           <span className="font-semibold bg-gray-50 text-gray-600 px-1.5 py-0.5 rounded border border-gray-150">
             HSN: {item.hsn}
           </span>
-          <span className="font-semibold bg-gray-50 text-gray-600 px-1.5 py-0.5 rounded border border-gray-150">
-            Unit: {item.unit}
+          <span className="font-bold bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded border border-gray-200">
+            Unit Wt: {unitWeight.toFixed(1)} kg
           </span>
-          {hasWeight ? (
-            <>
-              <span className="font-semibold bg-gray-50 text-gray-600 px-1.5 py-0.5 rounded border border-gray-150">
-                Unit Wt: {item.unitWeight} kg
-              </span>
-              <span className="font-bold bg-blue-50/50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">
-                Total Wt: {rowWeight.toLocaleString('en-IN')} kg
-              </span>
-            </>
-          ) : null}
+          <span className="font-bold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">
+            Total Wt: {rowWeight.toFixed(1)} kg
+          </span>
         </div>
 
-        {/* Inputs (Qty & Rate) */}
-        <div className="grid grid-cols-2 gap-3 pt-1">
+        {/* Inputs row for mobile */}
+        <div className="grid grid-cols-3 gap-2 pt-1">
+          {/* Unit dropdown */}
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Quantity</label>
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Unit</label>
+            <select
+              value={item.unit}
+              onChange={(e) => handleUnitChange(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg py-1.5 px-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white"
+            >
+              <option value="PCS">PCS</option>
+              <option value="KG">KG</option>
+              <option value="MTR">MTR</option>
+            </select>
+          </div>
+          {/* Qty Input */}
+          <div>
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Quantity</label>
             <input
               type="number"
               min={0}
@@ -172,26 +241,30 @@ export default function ItemRow({ item, index, onChange, onRemove }: Props) {
               className="w-full border border-gray-300 rounded-lg py-1.5 px-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white"
             />
           </div>
+          {/* Rate Input */}
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Rate</label>
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Rate</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1.5 text-xs font-bold text-gray-400">₹</span>
+              <span className="absolute left-1.5 top-2 text-[8px] font-extrabold text-gray-400 uppercase">
+                {getRateLabel()}
+              </span>
               <input
                 type="number"
                 min={0}
+                step="any"
                 value={item.rate === 0 ? '' : item.rate}
                 onChange={(e) => handleRateChange(e.target.value)}
-                className="pl-5 pr-2 py-1.5 w-full text-right border border-gray-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white"
+                className="pl-8 pr-1.5 py-1.5 w-full text-right border border-gray-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white"
               />
             </div>
           </div>
         </div>
 
-        {/* Amount */}
+        {/* Subtotal Display */}
         <div className="flex justify-between items-center pt-2 border-t border-gray-100">
           <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Subtotal</span>
           <span className="font-extrabold text-blue-900 text-sm">
-            ₹{calculateItemAmount(item).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ₹{itemAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
       </div>

@@ -7,7 +7,8 @@ import SummarySection from '../components/SummarySection';
 import PDFPreviewModal from '../components/PDFPreviewModal';
 import BuyerSection from '../components/BuyerSection';
 import ProductCatalog from '../components/ProductCatalog';
-import { QuotationFormData, Item as QuotationItem, TaxType, Buyer } from '../types/quotation';
+import { QuotationFormData, Item as QuotationItem, TaxType, Buyer, Product } from '../types/quotation';
+import ProductModal from '../components/ProductModal';
 import catalogue from '../data/catalogue';
 import {
   FileText,
@@ -20,7 +21,7 @@ import {
   Layers,
   Scale
 } from 'lucide-react';
-import { calculateTotalWeight } from '../utils/calculations';
+import { calculateTotalWeight, calculateItemAmount, calculateItemWeight } from '../utils/calculations';
 
 const generateId = () => Math.random().toString(36).slice(2, 9);
 
@@ -50,6 +51,93 @@ export default function Home() {
   const [pdfUrl, setPdfUrl] = useState<string | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const fetchNextId = async () => {
+    try {
+      const res = await fetch('/api/quotations/next-id');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.nextId) {
+          setQuotationNumber(data.nextId);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching next quotation ID:', err);
+    }
+  };
+
+  const saveQuotationToDb = async (payload: QuotationFormData) => {
+    try {
+      const res = await fetch('/api/quotations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.record) {
+          setQuotationNumber(data.record.quotationNumber);
+          return data.record.quotationNumber;
+        }
+      }
+    } catch (err) {
+      console.error('Error saving quotation to DB:', err);
+    }
+    return null;
+  };
+
+  const handleSaveOnly = async () => {
+    if (!buyer.name.trim()) {
+      alert('Please enter or verify the Buyer Name.');
+      return;
+    }
+    if (items.length === 0) {
+      alert('Please add at least one product to the quotation.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const payload: QuotationFormData = {
+        quotationNumber,
+        quotationDate,
+        buyer,
+        items,
+        taxType,
+        bankDetails,
+        authorisedSignatory,
+        deliveryNote,
+        modeTermsOfPayment,
+        referenceNo,
+        otherReferences,
+        buyerOrderNo,
+        buyerOrderDate,
+        dispatchDocNo,
+        deliveryNoteDate,
+        dispatchedThrough,
+        destination,
+        termsOfDelivery,
+      };
+
+      const finalNumber = await saveQuotationToDb(payload);
+      if (finalNumber) {
+        alert(`Quotation ${finalNumber} saved successfully to database!`);
+        fetchNextId();
+      } else {
+        alert('Failed to save quotation.');
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNextId();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -69,16 +157,23 @@ export default function Home() {
       const updated = [...items];
       const current = updated[existingIndex];
       const newQty = current.quantity + 1;
-      updated[existingIndex] = {
+      const unitWeight = current.unitWeightKg ?? current.unitWeight ?? 0;
+      
+      const updatedItem = {
         ...current,
         quantity: newQty,
-        amount: Number((newQty * current.rate).toFixed(2)),
-        totalWeight: current.unitWeight ? Number((newQty * current.unitWeight).toFixed(2)) : undefined,
+        totalWeight: Number((newQty * unitWeight).toFixed(2)),
+      };
+      
+      updated[existingIndex] = {
+        ...updatedItem,
+        amount: calculateItemAmount(updatedItem),
       };
       setItems(updated);
       return;
     }
 
+    const unitWeight = p.unitWeightKg ?? p.unitWeight ?? 0;
     const newItem: QuotationItem = {
       id: generateId(),
       productId: p.id,
@@ -87,12 +182,15 @@ export default function Home() {
       unit: p.unit,
       quantity: 1,
       rate: p.defaultRate,
-      amount: p.defaultRate * 1,
+      amount: 0,
       photoUrl: p.photoUrl,
       link: p.photoUrl,
-      unitWeight: p.unitWeight,
-      totalWeight: p.unitWeight ? p.unitWeight : undefined,
+      unitWeight: unitWeight,
+      unitWeightKg: unitWeight,
+      totalWeight: unitWeight ? unitWeight : undefined,
     } as QuotationItem;
+
+    newItem.amount = calculateItemAmount(newItem);
     setItems((s) => [...s, newItem]);
   };
 
@@ -137,6 +235,12 @@ export default function Home() {
         termsOfDelivery,
       };
 
+      // Automatically save to database before printing PDF
+      const finalNumber = await saveQuotationToDb(payload);
+      if (finalNumber) {
+        payload.quotationNumber = finalNumber;
+      }
+
       const res = await fetch('/api/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,11 +259,14 @@ export default function Home() {
       a.href = url;
       const bName = buyer.name || 'Estimate';
       const sanitizedBName = bName.replace(/\s+/g, '_');
-      a.download = `JMK_Quotation_${sanitizedBName}_${quotationNumber}.pdf`;
+      a.download = `JMK_Quotation_${sanitizedBName}_${payload.quotationNumber}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      
+      // Refresh the sequence number for the next quote
+      fetchNextId();
     } catch (e: any) {
       console.error(e);
       alert('Error generating PDF: ' + e.message);
@@ -176,6 +283,20 @@ export default function Home() {
       <HeaderSection />
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Navigation Bar */}
+        <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-blue-600 rounded-full"></span>
+            <span className="font-extrabold text-xs text-gray-700 uppercase tracking-wider">JMK Quotation System v2.1</span>
+          </div>
+          <a 
+            href="/admin"
+            className="px-4 py-2 bg-blue-50 text-blue-705 text-blue-700 hover:bg-blue-100 font-bold text-xs rounded-lg border border-blue-200 flex items-center gap-1.5 transition-all active:scale-95"
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Go to Admin Dashboard</span>
+          </a>
+        </div>
         {/* Dynamic Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
@@ -439,18 +560,30 @@ export default function Home() {
               {/* Table Header */}
               <div className="hidden sm:grid grid-cols-12 gap-2 bg-gray-50/80 p-3.5 text-xs font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200">
                 <div className="col-span-1 text-center">#</div>
-                <div className="col-span-4">Description of Goods</div>
+                <div className="col-span-3">Description of Goods</div>
                 <div className="col-span-1 text-center">HSN</div>
                 <div className="col-span-1 text-center">Unit</div>
                 <div className="col-span-1 text-center">Qty</div>
-                <div className="col-span-2 text-right">Rate (₹)</div>
+                <div className="col-span-1 text-center">Unit Wt (KG)</div>
+                <div className="col-span-1 text-center">Total Wt (KG)</div>
+                <div className="col-span-1 text-right">Rate (₹)</div>
                 <div className="col-span-1 text-right">Amount (₹)</div>
                 <div className="col-span-1 text-center">Action</div>
               </div>
               {/* Rows */}
               <div className="divide-y divide-gray-200 bg-white">
                 {items.map((it, idx) => (
-                  <ItemRow key={it.id} item={it} index={idx} onChange={updateItem} onRemove={removeItem} />
+                  <ItemRow 
+                    key={it.id} 
+                    item={it} 
+                    index={idx} 
+                    onChange={updateItem} 
+                    onRemove={removeItem} 
+                    onProductClick={(prodId) => {
+                      const prod = catalogue.find(p => p.id === prodId);
+                      if (prod) setSelectedProduct(prod);
+                    }}
+                  />
                 ))}
               </div>
             </div>
@@ -489,7 +622,26 @@ export default function Home() {
                 isDownloading={isGenerating}
               />
               
-              <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+              <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-end gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleSaveOnly}
+                  disabled={isSaving || items.length === 0}
+                  className="px-6 py-3 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-400 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed active:scale-95 text-sm"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving to DB...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Landmark className="w-4 h-4" />
+                      <span>Save Quotation to DB</span>
+                    </>
+                  )}
+                </button>
+
                 <button
                   onClick={handleGenerate}
                   disabled={isGenerating}
@@ -520,6 +672,14 @@ export default function Home() {
           quotationNumber={quotationNumber}
           onClose={() => setIsModalOpen(false)}
         />
+
+        {/* Modal for Product Specs Details */}
+        {selectedProduct && (
+          <ProductModal 
+            product={selectedProduct} 
+            onClose={() => setSelectedProduct(null)} 
+          />
+        )}
       </div>
     </main>
   );
