@@ -14,9 +14,10 @@ type Props = {
   taxType: TaxType;
   onDownloadPDF?: () => void;
   isDownloading?: boolean;
+  saveStatus?: 'idle' | 'saving' | 'success' | 'error';
 };
 
-export default function SummarySection({ items, taxType, onDownloadPDF, isDownloading = false }: Props) {
+export default function SummarySection({ items, taxType, onDownloadPDF, isDownloading = false, saveStatus = 'idle' }: Props) {
   const subtotal = calculateSubtotal(items);
   const taxes = calculateTaxAmounts(subtotal, taxType);
   const grandTotal = subtotal + taxes.totalTax;
@@ -117,7 +118,7 @@ export default function SummarySection({ items, taxType, onDownloadPDF, isDownlo
                       {taxType === 'igst' ? 'IGST 18%' : 'CGST 9% + SGST 9%'}
                     </td>
                     <td className="py-2 px-2 text-right font-semibold">₹{row.totalTax.toLocaleString('en-IN')}</td>
-                    <td className="py-2 px-3 text-right font-extrabold text-blue-905">
+                    <td className="py-2 px-3 text-right font-extrabold text-blue-900">
                       ₹{(row.taxableValue + row.totalTax).toLocaleString('en-IN')}
                     </td>
                   </tr>
@@ -129,11 +130,11 @@ export default function SummarySection({ items, taxType, onDownloadPDF, isDownlo
       ) : null}
 
       {onDownloadPDF && (
-        <div className="pt-2">
+        <div className="pt-2 space-y-2">
           <button
             onClick={onDownloadPDF}
             disabled={isDownloading || items.length === 0}
-            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-extrabold text-xs rounded-xl shadow-sm hover:shadow transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed active:scale-95 uppercase tracking-wider"
+            className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-extrabold text-xs rounded-xl shadow-sm hover:shadow transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed active:scale-95 uppercase tracking-wider font-bold"
           >
             {isDownloading ? (
               <>
@@ -142,11 +143,33 @@ export default function SummarySection({ items, taxType, onDownloadPDF, isDownlo
               </>
             ) : (
               <>
-                <FileDown className="w-4 h-4" />
-                <span>Generate & Download GST Quotation PDF</span>
+                <span>⚡ Generate & Download GST Quotation PDF</span>
               </>
             )}
           </button>
+
+          {/* Inline Status Badge */}
+          {saveStatus && saveStatus !== 'idle' && (
+            <div className="text-center pt-1">
+              {saveStatus === 'success' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold animate-fade-in w-full justify-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-550 bg-emerald-500 animate-pulse"></span>
+                  <span>✓ PDF Downloaded & Auto-Saved to Database</span>
+                </span>
+              )}
+              {saveStatus === 'saving' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-150 text-blue-800 text-[11px] font-bold w-full justify-center">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                  <span>Syncing with Cloud Database...</span>
+                </span>
+              )}
+              {saveStatus === 'error' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-[11px] font-bold w-full justify-center">
+                  <span>⚠ Offline Fallback: Saved to Local Storage</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 

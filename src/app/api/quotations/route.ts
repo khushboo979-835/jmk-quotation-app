@@ -24,10 +24,26 @@ export async function GET(req: NextRequest) {
       formData: doc.formData
     }));
 
-    return NextResponse.json({ success: true, quotations: formatted });
+    return NextResponse.json(
+      { success: true, quotations: formatted },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, max-age=0, must-revalidate',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('MongoDB GET quotations error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, max-age=0, must-revalidate',
+        },
+      }
+    );
   }
 }
 
@@ -37,7 +53,13 @@ export async function POST(req: NextRequest) {
     const body: QuotationFormData = await req.json();
     
     if (!body || !body.buyer || !body.items || body.items.length === 0) {
-      return NextResponse.json({ success: false, error: 'Invalid quotation payload.' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Invalid quotation payload.' },
+        {
+          status: 400,
+          headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' },
+        }
+      );
     }
 
     // Calculations
@@ -88,11 +110,24 @@ export async function POST(req: NextRequest) {
       createdAt: new Date()
     };
 
-    const savedDoc = await Quotation.findOneAndUpdate(
-      { quotationNumber: finalQuotationNumber },
-      record,
-      { upsert: true, new: true }
-    );
+    // MongoDB write operation wrapped in a quick try/catch
+    let savedDoc;
+    try {
+      savedDoc = await Quotation.findOneAndUpdate(
+        { quotationNumber: finalQuotationNumber },
+        record,
+        { upsert: true, new: true }
+      );
+    } catch (writeError: any) {
+      console.error('MongoDB write failed:', writeError);
+      return NextResponse.json(
+        { success: false, error: 'Database write operation failed: ' + writeError.message },
+        {
+          status: 500,
+          headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' },
+        }
+      );
+    }
 
     // Format to match frontend QuotationRecord
     const formattedRecord = {
@@ -110,10 +145,26 @@ export async function POST(req: NextRequest) {
       formData: savedDoc.formData
     };
 
-    return NextResponse.json({ success: true, record: formattedRecord });
+    return NextResponse.json(
+      { success: true, record: formattedRecord },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, max-age=0, must-revalidate',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('MongoDB POST save quotation error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, max-age=0, must-revalidate',
+        },
+      }
+    );
   }
 }
 
@@ -124,17 +175,43 @@ export async function DELETE(req: NextRequest) {
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ success: false, error: 'Quotation ID is required for deletion.' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Quotation ID is required for deletion.' },
+        {
+          status: 400,
+          headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' },
+        }
+      );
     }
 
     const res = await Quotation.deleteOne({ quotationNumber: id });
     if (res.deletedCount && res.deletedCount > 0) {
-      return NextResponse.json({ success: true, message: `Quotation ${id} deleted successfully.` });
+      return NextResponse.json(
+        { success: true, message: `Quotation ${id} deleted successfully.` },
+        {
+          status: 200,
+          headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' },
+        }
+      );
     } else {
-      return NextResponse.json({ success: false, error: `Quotation ${id} not found.` }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: `Quotation ${id} not found.` },
+        {
+          status: 404,
+          headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' },
+        }
+      );
     }
   } catch (error: any) {
     console.error('MongoDB DELETE quotation error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, max-age=0, must-revalidate',
+        },
+      }
+    );
   }
 }
