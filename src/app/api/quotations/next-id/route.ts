@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getNextQuotationNumber } from '../../../../lib/db';
+import { dbConnect } from '../../../../lib/mongodb';
+import { getNextQuotationNumberMongo } from '../../../../models/Quotation';
 
 export async function GET(req: NextRequest) {
   try {
-    const nextId = getNextQuotationNumber();
+    await dbConnect();
+    const nextId = await getNextQuotationNumberMongo();
     return NextResponse.json({ success: true, nextId });
   } catch (error: any) {
+    console.error('MongoDB next-id GET error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

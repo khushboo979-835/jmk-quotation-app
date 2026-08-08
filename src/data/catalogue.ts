@@ -1,7 +1,157 @@
 import { CatalogueItem } from '@/types/quotation';
 
 export const CATALOGUE: CatalogueItem[] = [
-  // === MS STANDARD (CUPLOCK VERTICAL) ===
+  // ==========================================
+  // 1. EXPANSION JOINTS (10 Items)
+  // ==========================================
+  {
+    "id": "ss_expansion_joints",
+    "name": "SS Expansion Joints (Standard / Custom Sizes)",
+    "category": "Expansion Joints",
+    "hsn": "7308",
+    "size": "Standard Specification",
+    "unit": "MTR",
+    "defaultRate": 3500,
+    "unitWeight": 15.0,
+    "unitWeightKg": 15.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/4/507026690/CF/QN/RH/146888318/expansion-joint-waterproofing-services-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2856372685112"
+  },
+  {
+    "id": "strip_seal_expansion_joint",
+    "name": "Strip Seal Expansion Joint",
+    "category": "Expansion Joints",
+    "hsn": "7308",
+    "size": "Standard Specification",
+    "unit": "MTR",
+    "defaultRate": 2400,
+    "unitWeight": 18.0,
+    "unitWeightKg": 18.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476482060/WM/KC/MN/146888318/img-20241227-wa0086-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2855536228312"
+  },
+  {
+    "id": "finger_type_expansion_joint",
+    "name": "Finger Type Expansion Joint",
+    "category": "Expansion Joints",
+    "hsn": "7308",
+    "size": "Standard Specification",
+    "unit": "MTR",
+    "defaultRate": 4800,
+    "unitWeight": 25.0,
+    "unitWeightKg": 25.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476989955/PV/II/RN/146888318/mild-steel-pop-up-drainage-spout-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "modular_expansion_joint",
+    "name": "Modular Expansion Joint",
+    "category": "Expansion Joints",
+    "hsn": "7308",
+    "size": "Standard Specification",
+    "unit": "MTR",
+    "defaultRate": 7500,
+    "unitWeight": 35.0,
+    "unitWeightKg": 35.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/7/438212533/KH/VA/QI/146888318/strip-seal-expansion-joint-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_expansion_joint_20inch",
+    "name": "20inch MS Expansion Joint",
+    "category": "Expansion Joints",
+    "hsn": "7308",
+    "size": "20inch",
+    "unit": "MTR",
+    "defaultRate": 2500,
+    "unitWeight": 22.0,
+    "unitWeightKg": 22.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/7/438212533/KH/VA/QI/146888318/strip-seal-expansion-joint-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2854538728488"
+  },
+  {
+    "id": "bitumen_expansion_joint",
+    "name": "7inch Bitumen Expansion Joint Mastic Pad",
+    "category": "Expansion Joints",
+    "hsn": "7308",
+    "size": "7inch",
+    "unit": "PCS",
+    "defaultRate": 350,
+    "unitWeight": 5.0,
+    "unitWeightKg": 5.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/2/488290908/AH/HZ/PX/146888318/bitumen-expansion-joint-mastic-pad-500x500.jpeg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2855775522397"
+  },
+  {
+    "id": "aluminum_expansion_joint_3inch",
+    "name": "3 inch Aluminum Expansion Joint",
+    "category": "Expansion Joints",
+    "hsn": "7308",
+    "size": "3 inch",
+    "unit": "MTR",
+    "defaultRate": 2800,
+    "unitWeight": 6.8,
+    "unitWeightKg": 6.8,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/4/506813568/WP/MD/MF/146888318/floor-aluminum-joint-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2856372685662"
+  },
+  {
+    "id": "elastomeric_expansion_joint",
+    "name": "Elastomeric Expansion Joint",
+    "category": "Expansion Joints",
+    "hsn": "7308",
+    "size": "Standard Specification",
+    "unit": "MTR",
+    "defaultRate": 1800,
+    "unitWeight": 12.0,
+    "unitWeightKg": 12.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991775/EZ/SN/VM/146888318/elastomeric-bridge-rubber-bearing-500x500.jpeg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "compression_seal_joint",
+    "name": "Compression Seal Expansion Joint",
+    "category": "Expansion Joints",
+    "hsn": "7308",
+    "size": "Standard Specification",
+    "unit": "MTR",
+    "defaultRate": 1500,
+    "unitWeight": 8.0,
+    "unitWeightKg": 8.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/4/507026690/CF/QN/RH/146888318/expansion-joint-waterproofing-services-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "asphaltic_plug_joint",
+    "name": "Asphaltic Plug Expansion Joint",
+    "category": "Expansion Joints",
+    "hsn": "7308",
+    "size": "Standard Specification",
+    "unit": "MTR",
+    "defaultRate": 3200,
+    "unitWeight": 40.0,
+    "unitWeightKg": 40.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/2/488290908/AH/HZ/PX/146888318/bitumen-expansion-joint-mastic-pad-500x500.jpeg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+
+  // ==========================================
+  // 2. CUPLOCK SCAFFOLDING (20 Items)
+  // ==========================================
+  // Verticals / Standards
+  {
+    "id": "ms_standard_0_5m",
+    "name": "MS Standard (Cuplock Vertical) - 0.5 MTR",
+    "category": "Cuplock Scaffolding",
+    "hsn": "7308",
+    "size": "0.5 MTR",
+    "unit": "PCS",
+    "defaultRate": 150,
+    "unitWeight": 2.2,
+    "unitWeightKg": 2.2,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/507520993/DO/BA/DF/146888318/scaffolding-vertical-standards-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
   {
     "id": "ms_standard_1m",
     "name": "MS Standard (Cuplock Vertical) - 1 MTR",
@@ -67,8 +217,46 @@ export const CATALOGUE: CatalogueItem[] = [
     "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/507520993/DO/BA/DF/146888318/scaffolding-vertical-standards-500x500.jpg",
     "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
   },
-
-  // === MS LEDGER (HORIZONTAL) ===
+  {
+    "id": "ms_standard_4m",
+    "name": "MS Standard (Cuplock Vertical) - 4.0 MTR",
+    "category": "Cuplock Scaffolding",
+    "hsn": "7308",
+    "size": "4.0 MTR",
+    "unit": "PCS",
+    "defaultRate": 1140,
+    "unitWeight": 17.5,
+    "unitWeightKg": 17.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/507520993/DO/BA/DF/146888318/scaffolding-vertical-standards-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_standard_4_5m",
+    "name": "MS Standard (Cuplock Vertical) - 4.5 MTR",
+    "category": "Cuplock Scaffolding",
+    "hsn": "7308",
+    "size": "4.5 MTR",
+    "unit": "PCS",
+    "defaultRate": 1300,
+    "unitWeight": 20.0,
+    "unitWeightKg": 20.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/507520993/DO/BA/DF/146888318/scaffolding-vertical-standards-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_standard_5m",
+    "name": "MS Standard (Cuplock Vertical) - 5.0 MTR",
+    "category": "Cuplock Scaffolding",
+    "hsn": "7308",
+    "size": "5.0 MTR",
+    "unit": "PCS",
+    "defaultRate": 1460,
+    "unitWeight": 22.5,
+    "unitWeightKg": 22.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/507520993/DO/BA/DF/146888318/scaffolding-vertical-standards-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  // Horizontals / Ledgers
   {
     "id": "ms_ledger_855",
     "name": "MS Ledger (Horizontal) - 855 MM",
@@ -173,64 +361,49 @@ export const CATALOGUE: CatalogueItem[] = [
     "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476982660/HG/JP/XN/146888318/shuttering-plate-500x500.jpeg",
     "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
   },
-
-  // === MS CHALI ===
   {
-    "id": "ms_chali",
-    "name": "MS Chali (Jali) Walkway Platform",
-    "category": "Scaffolding Plates",
+    "id": "ms_ledger_2000",
+    "name": "MS Ledger (Horizontal) - 2000 MM",
+    "category": "Cuplock Scaffolding",
     "hsn": "7308",
-    "size": "2 MTR x 2.5 MTR",
+    "size": "2000 MM",
     "unit": "PCS",
-    "defaultRate": 1105,
-    "unitWeight": 17.0,
-    "unitWeightKg": 17.0,
-    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/512285836/LP/GN/RB/146888318/ms-plank-walkway-jali-500x500.jpeg",
+    "defaultRate": 487.5,
+    "unitWeight": 7.5,
+    "unitWeightKg": 7.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476982660/HG/JP/XN/146888318/shuttering-plate-500x500.jpeg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_ledger_2500",
+    "name": "MS Ledger (Horizontal) - 2500 MM",
+    "category": "Cuplock Scaffolding",
+    "hsn": "7308",
+    "size": "2500 MM",
+    "unit": "PCS",
+    "defaultRate": 617.5,
+    "unitWeight": 9.5,
+    "unitWeightKg": 9.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476982660/HG/JP/XN/146888318/shuttering-plate-500x500.jpeg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_ledger_3000",
+    "name": "MS Ledger (Horizontal) - 3000 MM",
+    "category": "Cuplock Scaffolding",
+    "hsn": "7308",
+    "size": "3000 MM",
+    "unit": "PCS",
+    "defaultRate": 747.5,
+    "unitWeight": 11.5,
+    "unitWeightKg": 11.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476982660/HG/JP/XN/146888318/shuttering-plate-500x500.jpeg",
     "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
   },
 
-  // === MS PROP (KHULKE) ===
-  {
-    "id": "ms_prop_2x2",
-    "name": "MS Prop (Khulke) 2x2 MTR",
-    "category": "Clamps & Jacks",
-    "hsn": "7308",
-    "size": "2x2 MTR (13 FEET)",
-    "unit": "PCS",
-    "defaultRate": 1137.5,
-    "unitWeight": 17.5,
-    "unitWeightKg": 17.5,
-    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991569/TE/EA/TA/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
-    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
-  },
-  {
-    "id": "ms_prop_2x3",
-    "name": "MS Prop (Khulke) 2x3 MTR",
-    "category": "Clamps & Jacks",
-    "hsn": "7308",
-    "size": "2x3 MTR (16 FEET)",
-    "unit": "PCS",
-    "defaultRate": 1300,
-    "unitWeight": 20.0,
-    "unitWeightKg": 20.0,
-    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991569/TE/EA/TA/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
-    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
-  },
-  {
-    "id": "ms_prop_3x3",
-    "name": "MS Prop (Khulke) 3x3 MTR",
-    "category": "Clamps & Jacks",
-    "hsn": "7308",
-    "size": "3x3 MTR (19 FEET)",
-    "unit": "PCS",
-    "defaultRate": 1625,
-    "unitWeight": 25.0,
-    "unitWeightKg": 25.0,
-    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991569/TE/EA/TA/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
-    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
-  },
-
-  // === MS SHEET PLATE ===
+  // ==========================================
+  // 3. SHUTTERING & SCAFFOLDING PLATES (10 Items)
+  // ==========================================
   {
     "id": "ms_sheet_plate_1_5x3",
     "name": "MS Sheet Plate 1.5x3 FEET",
@@ -270,36 +443,166 @@ export const CATALOGUE: CatalogueItem[] = [
     "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476992283/LI/NG/NU/146888318/mild-steel-column-shuttering-plate-500x500.jpeg",
     "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
   },
-
-  // === MS CHANNEL ===
   {
-    "id": "ms_channel_10ft",
-    "name": "MS Channel - 10 FEET",
-    "category": "Civil Accessories",
+    "id": "ms_sheet_plate_3x3",
+    "name": "MS Sheet Plate 3x3 FEET",
+    "category": "Scaffolding Plates",
     "hsn": "7308",
-    "size": "10 FEET",
+    "size": "3x3 FEET",
     "unit": "PCS",
-    "defaultRate": 1500,
+    "defaultRate": 1950,
+    "unitWeight": 30.0,
+    "unitWeightKg": 30.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476992283/LI/NG/NU/146888318/mild-steel-column-shuttering-plate-500x500.jpeg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_sheet_plate_3x4",
+    "name": "MS Sheet Plate 3x4 FEET",
+    "category": "Scaffolding Plates",
+    "hsn": "7308",
+    "size": "3x4 FEET",
+    "unit": "PCS",
+    "defaultRate": 2470,
+    "unitWeight": 38.0,
+    "unitWeightKg": 38.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476992283/LI/NG/NU/146888318/mild-steel-column-shuttering-plate-500x500.jpeg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_chali",
+    "name": "MS Chali (Jali) Walkway Platform - 2.5 M",
+    "category": "Scaffolding Plates",
+    "hsn": "7308",
+    "size": "2 MTR x 2.5 MTR",
+    "unit": "PCS",
+    "defaultRate": 1105,
+    "unitWeight": 17.0,
+    "unitWeightKg": 17.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/512285836/LP/GN/RB/146888318/ms-plank-walkway-jali-500x500.jpeg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_chali_3m",
+    "name": "MS Chali (Jali) Walkway Platform - 3 MTR",
+    "category": "Scaffolding Plates",
+    "hsn": "7308",
+    "size": "3 MTR x 0.5 MTR",
+    "unit": "PCS",
+    "defaultRate": 1430,
+    "unitWeight": 22.0,
+    "unitWeightKg": 22.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/512285836/LP/GN/RB/146888318/ms-plank-walkway-jali-500x500.jpeg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_chali_1_5m",
+    "name": "MS Chali (Jali) Walkway Platform - 1.5 M",
+    "category": "Scaffolding Plates",
+    "hsn": "7308",
+    "size": "1.5 MTR x 0.5 MTR",
+    "unit": "PCS",
+    "defaultRate": 750,
+    "unitWeight": 11.5,
+    "unitWeightKg": 11.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/512285836/LP/GN/RB/146888318/ms-plank-walkway-jali-500x500.jpeg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_shuttering_soldiers",
+    "name": "MS Shuttering Soldiers 2.5 Mtr",
+    "category": "Scaffolding Plates",
+    "hsn": "7308",
+    "size": "2.5 Mtr",
+    "unit": "PCS",
+    "defaultRate": 1820,
+    "unitWeight": 28.0,
+    "unitWeightKg": 28.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/4/506840425/JL/FE/AD/146888318/ms-shuttering-soldiers-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2856373972012"
+  },
+  {
+    "id": "ms_column_box_plate",
+    "name": "MS Column Box Plate 1x1 Feet",
+    "category": "Scaffolding Plates",
+    "hsn": "7308",
+    "size": "1x1 Feet",
+    "unit": "PCS",
+    "defaultRate": 550,
+    "unitWeight": 8.5,
+    "unitWeightKg": 8.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/507515216/KY/WJ/RL/146888318/construction-column-box-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+
+  // ==========================================
+  // 4. PROPS, JACKS & CLAMPS (12 Items)
+  // ==========================================
+  {
+    "id": "ms_prop_2x2",
+    "name": "MS Prop (Khulke) 2x2 MTR",
+    "category": "Clamps & Jacks",
+    "hsn": "7308",
+    "size": "2x2 MTR (13 FEET)",
+    "unit": "PCS",
+    "defaultRate": 1137.5,
+    "unitWeight": 17.5,
+    "unitWeightKg": 17.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991569/TE/EA/TA/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_prop_2x3",
+    "name": "MS Prop (Khulke) 2x3 MTR",
+    "category": "Clamps & Jacks",
+    "hsn": "7308",
+    "size": "2x3 MTR (16 FEET)",
+    "unit": "PCS",
+    "defaultRate": 1300,
+    "unitWeight": 20.0,
+    "unitWeightKg": 20.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991569/TE/EA/TA/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_prop_3x3",
+    "name": "MS Prop (Khulke) 3x3 MTR",
+    "category": "Clamps & Jacks",
+    "hsn": "7308",
+    "size": "3x3 MTR (19 FEET)",
+    "unit": "PCS",
+    "defaultRate": 1625,
     "unitWeight": 25.0,
     "unitWeightKg": 25.0,
-    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/4/506857058/BT/GD/DK/146888318/ms-channel-100-x-50-500x500.jpg",
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991569/TE/EA/TA/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
     "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
   },
   {
-    "id": "ms_channel_8ft",
-    "name": "MS Channel - 8 FEET",
-    "category": "Civil Accessories",
+    "id": "ms_prop_3x4",
+    "name": "MS Prop (Khulke) 3x4 MTR",
+    "category": "Clamps & Jacks",
     "hsn": "7308",
-    "size": "8 FEET",
+    "size": "3x4 MTR",
     "unit": "PCS",
-    "defaultRate": 1213.2,
-    "unitWeight": 20.22,
-    "unitWeightKg": 20.22,
-    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/4/506857058/BT/GD/DK/146888318/ms-channel-100-x-50-500x500.jpg",
+    "defaultRate": 1850,
+    "unitWeight": 28.5,
+    "unitWeightKg": 28.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991569/TE/EA/TA/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
     "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
   },
-
-  // === BASE JACK / U JACK ===
+  {
+    "id": "ms_prop_4x4",
+    "name": "MS Prop (Khulke) 4x4 MTR",
+    "category": "Clamps & Jacks",
+    "hsn": "7308",
+    "size": "4x4 MTR",
+    "unit": "PCS",
+    "defaultRate": 2080,
+    "unitWeight": 32.0,
+    "unitWeightKg": 32.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991569/TE/EA/TA/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
   {
     "id": "ms_base_jack",
     "name": "MS Base Jack",
@@ -326,11 +629,9 @@ export const CATALOGUE: CatalogueItem[] = [
     "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476990981/FW/JQ/NE/146888318/scaffolding-adjustable-u-head-jack-500x500.jpg",
     "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
   },
-
-  // === MS CLAMP / JOINT PIN ===
   {
-    "id": "ms_clamp",
-    "name": "MS Scaffolding Clamp",
+    "id": "ms_right_angle_clamp",
+    "name": "MS Right Angle Scaffolding Clamp",
     "category": "Clamps & Jacks",
     "hsn": "7308",
     "size": "Standard Size",
@@ -339,7 +640,20 @@ export const CATALOGUE: CatalogueItem[] = [
     "unitWeight": 0.7,
     "unitWeightKg": 0.7,
     "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/507518778/UU/QU/DO/146888318/pressed-mild-steel-swivel-coupler-500x500.jpg",
-    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2856374404230"
+  },
+  {
+    "id": "ms_swivel_clamp",
+    "name": "MS Swivel Scaffolding Clamp",
+    "category": "Clamps & Jacks",
+    "hsn": "7308",
+    "size": "Standard Size",
+    "unit": "PCS",
+    "defaultRate": 52.0,
+    "unitWeight": 0.8,
+    "unitWeightKg": 0.8,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/507518778/UU/QU/DO/146888318/pressed-mild-steel-swivel-coupler-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2856374404230"
   },
   {
     "id": "ms_joint_pin",
@@ -354,8 +668,88 @@ export const CATALOGUE: CatalogueItem[] = [
     "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/507518778/UU/QU/DO/146888318/pressed-mild-steel-swivel-coupler-500x500.jpg",
     "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
   },
+  {
+    "id": "ms_sleeve_joint_pin",
+    "name": "MS Sleeve Joint Pin",
+    "category": "Clamps & Jacks",
+    "hsn": "7308",
+    "size": "Standard Size",
+    "unit": "PCS",
+    "defaultRate": 78,
+    "unitWeight": 1.2,
+    "unitWeightKg": 1.2,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/507518778/UU/QU/DO/146888318/pressed-mild-steel-swivel-coupler-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "g_panel_clamp",
+    "name": "MS G-Panel Clamp",
+    "category": "Clamps & Jacks",
+    "hsn": "7308",
+    "size": "Standard Size",
+    "unit": "PCS",
+    "defaultRate": 60,
+    "unitWeight": 0.9,
+    "unitWeightKg": 0.9,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/5/507518778/UU/QU/DO/146888318/pressed-mild-steel-swivel-coupler-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
 
-  // === MS PLAIN PIPE ===
+  // ==========================================
+  // 5. STEEL CHANNELS & PIPES (10 Items)
+  // ==========================================
+  {
+    "id": "ms_channel_10ft",
+    "name": "MS Channel - 10 FEET",
+    "category": "Civil Accessories",
+    "hsn": "7308",
+    "size": "10 FEET",
+    "unit": "PCS",
+    "defaultRate": 1500,
+    "unitWeight": 25.0,
+    "unitWeightKg": 25.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/4/506857058/BT/GD/DK/146888318/ms-channel-100-x-50-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2856375041673"
+  },
+  {
+    "id": "ms_channel_8ft",
+    "name": "MS Channel - 8 FEET",
+    "category": "Civil Accessories",
+    "hsn": "7308",
+    "size": "8 FEET",
+    "unit": "PCS",
+    "defaultRate": 1213.2,
+    "unitWeight": 20.22,
+    "unitWeightKg": 20.22,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/4/506857058/BT/GD/DK/146888318/ms-channel-100-x-50-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2856375041673"
+  },
+  {
+    "id": "ms_channel_12ft",
+    "name": "MS Channel - 12 FEET",
+    "category": "Civil Accessories",
+    "hsn": "7308",
+    "size": "12 FEET",
+    "unit": "PCS",
+    "defaultRate": 1830,
+    "unitWeight": 30.5,
+    "unitWeightKg": 30.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/4/506857058/BT/GD/DK/146888318/ms-channel-100-x-50-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_channel_6ft",
+    "name": "MS Channel - 6 FEET",
+    "category": "Civil Accessories",
+    "hsn": "7308",
+    "size": "6 FEET",
+    "unit": "PCS",
+    "defaultRate": 912,
+    "unitWeight": 15.2,
+    "unitWeightKg": 15.2,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/4/506857058/BT/GD/DK/146888318/ms-channel-100-x-50-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
   {
     "id": "ms_plain_pipe_3m",
     "name": "MS Plain Pipe - 3 MTR",
@@ -380,6 +774,192 @@ export const CATALOGUE: CatalogueItem[] = [
     "unitWeight": 20.0,
     "unitWeightKg": 20.0,
     "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/1/482920899/KK/PC/RQ/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_plain_pipe_1_5m",
+    "name": "MS Plain Pipe - 1.5 MTR",
+    "category": "Civil Accessories",
+    "hsn": "7308",
+    "size": "1.5 MTR (5 FEET)",
+    "unit": "PCS",
+    "defaultRate": 325,
+    "unitWeight": 5.0,
+    "unitWeightKg": 5.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/1/482920899/KK/PC/RQ/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_plain_pipe_4_5m",
+    "name": "MS Plain Pipe - 4.5 MTR",
+    "category": "Civil Accessories",
+    "hsn": "7308",
+    "size": "4.5 MTR (15 FEET)",
+    "unit": "PCS",
+    "defaultRate": 975,
+    "unitWeight": 15.0,
+    "unitWeightKg": 15.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/1/482920899/KK/PC/RQ/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_handrail_pipe",
+    "name": "MS Handrail Pipe - 3 MTR",
+    "category": "Civil Accessories",
+    "hsn": "7308",
+    "size": "3 MTR",
+    "unit": "PCS",
+    "defaultRate": 420,
+    "unitWeight": 6.5,
+    "unitWeightKg": 6.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/1/482920899/KK/PC/RQ/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_post_pipe",
+    "name": "MS Post Pipe - 1 MTR",
+    "category": "Civil Accessories",
+    "hsn": "7308",
+    "size": "1 MTR",
+    "unit": "PCS",
+    "defaultRate": 210,
+    "unitWeight": 3.2,
+    "unitWeightKg": 3.2,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/1/482920899/KK/PC/RQ/146888318/scaffolding-adjustable-props-jack-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+
+  // ==========================================
+  // 6. BRIDGE BEARINGS & STRUCTURAL STEEL (10 Items)
+  // ==========================================
+  {
+    "id": "pot_ptfe_bearing_100t",
+    "name": "Pot PTFE Bearing (100 Ton capacity)",
+    "category": "Bridge Bearings",
+    "hsn": "4016",
+    "size": "Standard Specification",
+    "unit": "PCS",
+    "defaultRate": 12500,
+    "unitWeight": 85.0,
+    "unitWeightKg": 85.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991144/AO/SM/KN/146888318/pot-ptfe-bridge-bearings-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2855528525197"
+  },
+  {
+    "id": "pot_ptfe_bearing_200t",
+    "name": "Pot PTFE Bearing (200 Ton capacity)",
+    "category": "Bridge Bearings",
+    "hsn": "4016",
+    "size": "Standard Specification",
+    "unit": "PCS",
+    "defaultRate": 25000,
+    "unitWeight": 150.0,
+    "unitWeightKg": 150.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991144/AO/SM/KN/146888318/pot-ptfe-bridge-bearings-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2855528525197"
+  },
+  {
+    "id": "pot_ptfe_bearing_500t",
+    "name": "Pot PTFE Bearing (500 Ton capacity)",
+    "category": "Bridge Bearings",
+    "hsn": "4016",
+    "size": "Standard Specification",
+    "unit": "PCS",
+    "defaultRate": 65000,
+    "unitWeight": 380.0,
+    "unitWeightKg": 380.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991144/AO/SM/KN/146888318/pot-ptfe-bridge-bearings-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2855528525197"
+  },
+  {
+    "id": "elastomeric_bearing_250",
+    "name": "Elastomeric Bridge Bearing (250x300x50mm)",
+    "category": "Bridge Bearings",
+    "hsn": "4016",
+    "size": "250x300x50mm",
+    "unit": "PCS",
+    "defaultRate": 3500,
+    "unitWeight": 15.0,
+    "unitWeightKg": 15.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991491/YM/YK/CZ/146888318/elastomeric-bridge-bearing-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2855536228812"
+  },
+  {
+    "id": "elastomeric_bearing_300",
+    "name": "Elastomeric Bridge Bearing (300x400x60mm)",
+    "category": "Bridge Bearings",
+    "hsn": "4016",
+    "size": "300x400x60mm",
+    "unit": "PCS",
+    "defaultRate": 6200,
+    "unitWeight": 28.0,
+    "unitWeightKg": 28.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991491/YM/YK/CZ/146888318/elastomeric-bridge-bearing-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2855536228812"
+  },
+  {
+    "id": "elastomeric_bearing_400",
+    "name": "Elastomeric Bridge Bearing (400x500x70mm)",
+    "category": "Bridge Bearings",
+    "hsn": "4016",
+    "size": "400x500x70mm",
+    "unit": "PCS",
+    "defaultRate": 9800,
+    "unitWeight": 45.0,
+    "unitWeightKg": 45.0,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2024/12/476991491/YM/YK/CZ/146888318/elastomeric-bridge-bearing-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2855536228812"
+  },
+  {
+    "id": "h_beam_column",
+    "name": "Structural Steel Column H-Beam (150x150)",
+    "category": "Bridge Bearings",
+    "hsn": "7308",
+    "size": "150x150 MM",
+    "unit": "MTR",
+    "defaultRate": 2000,
+    "unitWeight": 31.5,
+    "unitWeightKg": 31.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/4/507155197/UH/MA/VH/146888318/sail-ismc-channel-100x50-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "i_beam_steel",
+    "name": "Structural Steel I-Beam (200x100)",
+    "category": "Bridge Bearings",
+    "hsn": "7308",
+    "size": "200x100 MM",
+    "unit": "MTR",
+    "defaultRate": 1450,
+    "unitWeight": 22.3,
+    "unitWeightKg": 22.3,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2025/4/507155197/UH/MA/VH/146888318/sail-ismc-channel-100x50-500x500.jpg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
+  },
+  {
+    "id": "ms_tie_rod_3m",
+    "name": "MS Tie Rod (15/17mm) 3 MTR",
+    "category": "Bridge Bearings",
+    "hsn": "7308",
+    "size": "3 MTR",
+    "unit": "PCS",
+    "defaultRate": 250,
+    "unitWeight": 4.5,
+    "unitWeightKg": 4.5,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2026/5/605654634/BN/KE/GG/146888318/construction-tie-rod-500x500.jpeg",
+    "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html#item_2859185435591"
+  },
+  {
+    "id": "anchor_plate_tie_rod",
+    "name": "Anchor Plate for Tie Rod",
+    "category": "Bridge Bearings",
+    "hsn": "7308",
+    "size": "Standard Size",
+    "unit": "PCS",
+    "defaultRate": 50,
+    "unitWeight": 0.8,
+    "unitWeightKg": 0.8,
+    "imageUrl": "https://5.imimg.com/data5/SELLER/Default/2026/5/605654634/BN/KE/GG/146888318/construction-tie-rod-500x500.jpeg",
     "photoUrl": "https://www.indiamart.com/jmkengineeringdevelopers/photos.html"
   }
 ];
