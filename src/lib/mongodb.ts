@@ -1,11 +1,7 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  // We throw in production but fallback gracefully in development so the app can build without environment variables configured
-  console.warn('Warning: MONGODB_URI environment variable is not defined inside .env.local');
-}
+const DEFAULT_URI = 'mongodb+srv://khushbookumari23074_db_user:5XCupMiAjSeeNck4@cluster0.d1m3gve.mongodb.net/jmk_quotations?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI || DEFAULT_URI;
 
 /**
  * Global is used here to maintain a cached connection across hot reloads
@@ -19,10 +15,6 @@ if (!cached) {
 }
 
 export async function dbConnect() {
-  if (!process.env.MONGODB_URI) {
-    throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
-  }
-
   if (cached.conn) {
     return cached.conn;
   }
@@ -32,7 +24,7 @@ export async function dbConnect() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(process.env.MONGODB_URI, opts).then((mongooseInstance) => {
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
       return mongooseInstance;
     });
   }
