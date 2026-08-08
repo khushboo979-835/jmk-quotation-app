@@ -75,16 +75,16 @@ export default function SummarySection({ items, taxType, onDownloadPDF, isDownlo
       {/* Logistics & Materials weight preview (if applicable) */}
       {totalWeight > 0 ? (
         <div className="bg-amber-50/20 border border-amber-200/60 rounded-xl p-4 flex gap-3 items-start">
-          <div className="p-2 bg-amber-550/10 text-amber-700 bg-amber-50 rounded-lg flex-shrink-0 border border-amber-100">
+          <div className="p-2 bg-amber-50 text-amber-700 rounded-lg flex-shrink-0 border border-amber-100">
             <Scale className="w-4 h-4" />
           </div>
           <div className="space-y-0.5 min-w-0">
-            <div className="text-xs font-bold text-gray-700">Total Materials Weight:</div>
+            <div className="text-xs font-bold text-gray-700">Total Material Weight:</div>
             <div className="text-sm font-extrabold text-amber-800">
-              {totalWeight.toLocaleString('en-IN')} kg
+              {totalWeight.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} KG ({ (totalWeight / 1000).toFixed(2) } Tonnes)
             </div>
             <p className="text-[10px] text-gray-400 font-medium">
-              Calculated logistics freight weight. Transportation rates are applied separately based on {totalWeight} kg.
+              Calculated logistics freight weight. Transportation rates are applied separately based on the total weight of {totalWeight.toFixed(2)} KG.
             </p>
           </div>
         </div>

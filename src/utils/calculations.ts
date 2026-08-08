@@ -1,24 +1,29 @@
 import { Item, HSNBreakupRow, TaxType } from '../types/quotation';
 
 /**
- * Calculates row total: Row Total = Quantity * Unit Rate
+ * Calculates row total: 
+ * - If unit is 'KG': Total Weight (KG) * Rate (₹ per KG)
+ * - If unit is 'PCS' or 'MTR': Quantity * Rate (₹ per Piece)
  */
 export function calculateItemAmount(item: Item): number {
   const quantity = Number(item.quantity || 0);
   const rate = Number(item.rate || 0);
+  const unit = (item.unit || '').toUpperCase();
+
+  if (unit === 'KG') {
+    const totalWeight = calculateItemWeight(item);
+    return Number((totalWeight * rate).toFixed(2));
+  }
   return Number((quantity * rate).toFixed(2));
 }
 
 /**
- * Calculates item weight if applicable: Weight = Unit Weight * Quantity
+ * Calculates item weight: Weight = Unit Weight * Quantity
  */
 export function calculateItemWeight(item: Item): number {
-  if (item.unitWeight) {
-    const quantity = Number(item.quantity || 0);
-    const unitWeight = Number(item.unitWeight || 0);
-    return Number((quantity * unitWeight).toFixed(2));
-  }
-  return 0;
+  const unitWeight = Number(item.unitWeightKg ?? item.unitWeight ?? 0);
+  const quantity = Number(item.quantity || 0);
+  return Number((quantity * unitWeight).toFixed(2));
 }
 
 /**

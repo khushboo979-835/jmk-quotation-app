@@ -183,10 +183,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
   },
   // Table column widths
-  colNo: { width: '6%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'center' },
-  colDesc: { width: '44%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', paddingLeft: 6, paddingRight: 4, paddingVertical: 3 },
+  colNo: { width: '5%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'center' },
+  colDesc: { width: '35%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', paddingLeft: 6, paddingRight: 4, paddingVertical: 3 },
   colHsn: { width: '10%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'center' },
-  colQty: { width: '12%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'flex-end', paddingRight: 6 },
+  colQty: { width: '10%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'flex-end', paddingRight: 6 },
+  colWeight: { width: '12%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'flex-end', paddingRight: 6 },
   colRate: { width: '10%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'flex-end', paddingRight: 6 },
   colUnit: { width: '6%', borderRightWidth: 1, borderRightColor: '#000000', justifyContent: 'center', alignItems: 'center' },
   colAmount: { width: '12%', justifyContent: 'center', alignItems: 'flex-end', paddingRight: 6 },
@@ -492,6 +493,9 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
               <View style={styles.colQty}>
                 <Text style={styles.tableHeaderCell}>Quantity</Text>
               </View>
+              <View style={styles.colWeight}>
+                <Text style={styles.tableHeaderCell}>Total Wt (KG)</Text>
+              </View>
               <View style={styles.colRate}>
                 <Text style={styles.tableHeaderCell}>Rate</Text>
               </View>
@@ -504,8 +508,9 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
             </View>
 
             {items.map((item, index) => {
-              const hasWeight = item.unitWeight && item.unitWeight > 0;
+              const unitWeight = item.unitWeightKg ?? item.unitWeight ?? 0;
               const rowWeight = calculateItemWeight(item);
+              const amount = calculateItemAmount(item);
 
               return (
                 <View key={item.id} style={styles.tableRow}>
@@ -520,17 +525,18 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                     ) : (
                       <Text style={styles.cellTextBold}>{item.productName}</Text>
                     )}
-                    {hasWeight ? (
-                      <Text style={styles.weightSubtext}>
-                        Unit Weight: {item.unitWeight} kg | Total Weight: {rowWeight} kg
-                      </Text>
-                    ) : null}
+                    <Text style={styles.weightSubtext}>
+                      Unit Wt: {unitWeight.toFixed(2)} kg
+                    </Text>
                   </View>
                   <View style={styles.colHsn}>
                     <Text style={styles.cellText}>{item.hsn}</Text>
                   </View>
                   <View style={styles.colQty}>
-                    <Text style={styles.cellTextBold}>{item.quantity.toFixed(2)} {item.unit}</Text>
+                    <Text style={styles.cellTextBold}>{item.quantity.toFixed(2)}</Text>
+                  </View>
+                  <View style={styles.colWeight}>
+                    <Text style={styles.cellText}>{rowWeight.toFixed(2)} KG</Text>
                   </View>
                   <View style={styles.colRate}>
                     <Text style={styles.cellText}>{item.rate.toFixed(2)}</Text>
@@ -539,7 +545,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                     <Text style={styles.cellText}>{item.unit}</Text>
                   </View>
                   <View style={styles.colAmount}>
-                    <Text style={styles.cellTextBold}>{(item.quantity * item.rate).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                    <Text style={styles.cellTextBold}>{amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                   </View>
                 </View>
               );
@@ -553,9 +559,11 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
               <Text style={{ fontStyle: 'italic', marginBottom: 6 }}>{totalInWords}</Text>
               {totalWeight > 0 ? (
                 <View style={{ borderTopWidth: 1, borderTopColor: '#000000', paddingTop: 4 }}>
-                  <Text style={{ fontFamily: 'Helvetica-Bold' }}>Total Weight for Logistics: {totalWeight.toLocaleString('en-IN')} kg</Text>
-                  <Text style={{ fontSize: 6.5, color: '#4b5563', marginTop: 1 }}>
-                    * Transport/Logistics charges are extra based on shipment weight of {totalWeight} kg.
+                  <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 7.5 }}>
+                    Total Material Weight: {totalWeight.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} KG ({ (totalWeight / 1000).toFixed(2) } Tonnes)
+                  </Text>
+                  <Text style={{ fontSize: 6.2, color: '#4b5563', marginTop: 1 }}>
+                    * Transport/Logistics charges are extra based on total shipment weight of {totalWeight.toFixed(2)} KG.
                   </Text>
                 </View>
               ) : null}
