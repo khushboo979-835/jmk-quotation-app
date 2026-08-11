@@ -115,26 +115,73 @@ export async function GET(req: NextRequest) {
     const data = resData.data || resData.result || resData;
 
     // Extract Business Name using Deep Key Fallbacks:
-    const companyName = data?.tradeNam || data?.lgnm || data?.trade_name || data?.legal_name || data?.business_name || data?.data?.tradeNam || data?.data?.lgnm || data?.result?.tradeNam || data?.result?.lgnm || data?.result?.legal_name;
+    const companyName = 
+      data?.tradeNam || 
+      data?.lgnm || 
+      data?.legal_name || 
+      data?.trade_name || 
+      data?.business_name || 
+      data?.data?.tradeNam || 
+      data?.data?.lgnm || 
+      data?.data?.legal_name || 
+      data?.result?.legal_name || 
+      data?.result?.tradeNam || 
+      data?.taxpayerInfo?.lgnm || 
+      data?.taxpayerInfo?.tradeNam || 
+      resData?.tradeNam ||
+      resData?.lgnm ||
+      resData?.legal_name ||
+      resData?.trade_name ||
+      resData?.business_name ||
+      "";
 
     if (!companyName) {
       throw new Error('Business name not found in live API response structure');
     }
 
-    // Extract Registered Address
-    const addr = data?.pradr?.addr || data?.data?.pradr?.addr || data?.result?.pradr?.addr || data?.pradr || data?.address || {};
+    // Extract Registered Address with deep key scan
+    const addr = 
+      data?.pradr?.addr || 
+      data?.data?.pradr?.addr || 
+      data?.result?.pradr?.addr || 
+      data?.taxpayerInfo?.pradr?.addr ||
+      data?.pradr || 
+      data?.data?.pradr || 
+      data?.result?.pradr || 
+      data?.taxpayerInfo?.pradr || 
+      resData?.pradr?.addr ||
+      resData?.data?.pradr?.addr ||
+      resData?.result?.pradr?.addr ||
+      resData?.taxpayerInfo?.pradr?.addr ||
+      resData?.pradr ||
+      resData?.address ||
+      data?.address ||
+      {};
 
-    const bno = addr.bno || '';
-    const bnm = addr.bnm || '';
-    const st = addr.st || '';
-    const loc = addr.loc || '';
-    const dst = addr.dst || '';
-    const resolvedStateName = GST_STATE_CODES[stateCode] || addr.stcd || stateName;
-    const pncd = addr.pncd || addr.pincode || addr.pin_code || '';
+    let formattedAddress = '';
+    if (typeof addr === 'string') {
+      formattedAddress = addr;
+    } else {
+      const bno = addr.bno || '';
+      const bnm = addr.bnm || '';
+      const st = addr.st || '';
+      const loc = addr.loc || '';
+      const dst = addr.dst || '';
+      const resolvedStateName = GST_STATE_CODES[stateCode] || addr.stcd || stateName;
+      const pncd = addr.pncd || addr.pincode || addr.pin_code || '';
 
-    // Format address: building, street, city, district, state, pincode
-    const addressStr = `${bno} ${bnm}, ${st}, ${loc}, ${dst}, ${resolvedStateName} - ${pncd}`;
-    const formattedAddress = addressStr
+      const addressParts = [
+        bno && bnm ? `${bno} ${bnm}` : (bno || bnm),
+        st,
+        loc,
+        dst,
+        resolvedStateName ? `${resolvedStateName} - ${pncd}` : pncd
+      ].filter(Boolean);
+
+      formattedAddress = addressParts.join(', ');
+    }
+
+    formattedAddress = formattedAddress
       .replace(/\s+/g, ' ')
       .replace(/,\s*,/g, ',')
       .replace(/^[\s,]+|[\s,]+$/g, '');
@@ -144,10 +191,10 @@ export async function GET(req: NextRequest) {
       companyName,
       address: formattedAddress,
       stateCode,
-      stateName: resolvedStateName,
+      stateName: GST_STATE_CODES[stateCode] || addr.stcd || stateName,
       taxType,
       isLiveGovt: true,
-      phone: data.phone || data.mobNum || '',
+      phone: data.phone || data.mobNum || data.phone_number || resData.phone || '',
     });
   } catch (err: any) {
     console.error('GST Lookup live fetch error logged on server console:', err);
