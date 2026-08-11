@@ -14,7 +14,8 @@ import {
   Loader2,
   Calendar,
   DollarSign,
-  Briefcase
+  Briefcase,
+  Edit
 } from 'lucide-react';
 import HeaderSection from '../../components/HeaderSection';
 
@@ -101,12 +102,11 @@ export default function AdminDashboard() {
       });
     }
 
-    // Sort merged records by date descending
+    // Sort merged records by creation date descending
     const mergedList = Array.from(mergedMap.values()).sort((a, b) => {
-      const dateA = new Date(a.date || a.pdfGeneratedAt || 0).getTime();
-      const dateB = new Date(b.date || b.pdfGeneratedAt || 0).getTime();
-      if (dateB !== dateA) return dateB - dateA;
-      return b.quotationNumber.localeCompare(a.quotationNumber);
+      const timeA = new Date(a.pdfGeneratedAt || a.date || 0).getTime();
+      const timeB = new Date(b.pdfGeneratedAt || b.date || 0).getTime();
+      return timeB - timeA;
     });
 
     setQuotations(mergedList);
@@ -197,13 +197,41 @@ export default function AdminDashboard() {
     }
   };
 
+  // Helper to parse date inputs in mm/dd/yyyy or yyyy-mm-dd format
+  const parseInputDate = (dateStr: string): Date | null => {
+    if (!dateStr) return null;
+    const regexMDY = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
+    const matchMDY = dateStr.match(regexMDY);
+    if (matchMDY) {
+      const month = parseInt(matchMDY[1], 10) - 1;
+      const day = parseInt(matchMDY[2], 10);
+      const year = parseInt(matchMDY[3], 10);
+      const d = new Date(year, month, day);
+      if (!isNaN(d.getTime())) return d;
+    }
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d;
+    return null;
+  };
+
+  // Helper to format Date as MM/DD/YYYY
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return 'N/A';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
   // Calculations for Metrics Cards
   const totalQuotations = quotations.length;
   const totalRevenue = quotations.reduce((sum, q) => sum + (q.grandTotal || 0), 0);
   const totalWeightTonnes = quotations.reduce((sum, q) => sum + (q.totalWeightKg || 0), 0) / 1000;
   const activeClients = Array.from(new Set(quotations.map(q => q.buyerName.trim().toLowerCase()))).length;
 
-  // Search & Date Range Filter
+  // Search & Date Range Filter with robust parsing
   const filteredQuotations = quotations.filter(q => {
     const term = searchQuery.toLowerCase();
     const matchesSearch = 
@@ -212,11 +240,24 @@ export default function AdminDashboard() {
       (q.buyerGstin || '').toLowerCase().includes(term);
 
     let matchesDate = true;
-    if (startDate) {
-      matchesDate = matchesDate && q.date >= startDate;
-    }
-    if (endDate) {
-      matchesDate = matchesDate && q.date <= endDate;
+    const qDate = new Date(q.date);
+    if (!isNaN(qDate.getTime())) {
+      qDate.setHours(0, 0, 0, 0);
+      
+      if (startDate) {
+        const start = parseInputDate(startDate);
+        if (start) {
+          start.setHours(0, 0, 0, 0);
+          matchesDate = matchesDate && qDate.getTime() >= start.getTime();
+        }
+      }
+      if (endDate) {
+        const end = parseInputDate(endDate);
+        if (end) {
+          end.setHours(23, 59, 59, 999);
+          matchesDate = matchesDate && qDate.getTime() <= end.getTime();
+        }
+      }
     }
 
     return matchesSearch && matchesDate;
@@ -325,21 +366,29 @@ export default function AdminDashboard() {
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
               {/* Date Filters */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-gray-700"
-                  title="Start Date"
-                />
+                <div className="relative">
+                  <Calendar className="absolute left-2.5 top-2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Min Date (mm/dd/yyyy)"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="pl-7 pr-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-gray-700 w-38 placeholder:text-gray-400"
+                    title="Start Date (mm/dd/yyyy)"
+                  />
+                </div>
                 <span className="text-xs text-gray-400 font-bold">to</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-gray-700"
-                  title="End Date"
-                />
+                <div className="relative">
+                  <Calendar className="absolute left-2.5 top-2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Max Date (mm/dd/yyyy)"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="pl-7 pr-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-gray-700 w-38 placeholder:text-gray-400"
+                    title="End Date (mm/dd/yyyy)"
+                  />
+                </div>
               </div>
 
               {/* Search Input */}
@@ -410,7 +459,7 @@ export default function AdminDashboard() {
                       <td className="py-3.5 px-4 text-gray-500">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                          <span>{quote.date}</span>
+                          <span>{formatDate(quote.date)}</span>
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-gray-800 font-extrabold max-w-[200px] truncate" title={quote.buyerName}>
@@ -433,6 +482,16 @@ export default function AdminDashboard() {
                             title="View Quote Details"
                           >
                             <Eye className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              window.location.href = `/?edit=${encodeURIComponent(quote.quotationNumber)}`;
+                            }}
+                            className="p-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded border border-amber-250 transition-all cursor-pointer flex items-center justify-center"
+                            title="Edit & Reopen Quotation"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
                           </button>
                           
                           <button
@@ -566,9 +625,19 @@ export default function AdminDashboard() {
               {/* Drawer Footer Actions */}
               <div className="mt-8 pt-4 border-t border-gray-150 flex flex-col gap-2">
                 <button
+                  onClick={() => {
+                    window.location.href = `/?edit=${encodeURIComponent(selectedQuote.quotationNumber)}`;
+                  }}
+                  className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 uppercase tracking-wider cursor-pointer"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span>Edit & Modify Quotation</span>
+                </button>
+
+                <button
                   onClick={() => handleRedownload(selectedQuote)}
                   disabled={downloadingId === selectedQuote.quotationNumber}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 uppercase tracking-wider cursor-pointer"
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center justify-center gap-1.5 uppercase tracking-wider cursor-pointer transition-colors"
                 >
                   {downloadingId === selectedQuote.quotationNumber ? (
                     <>

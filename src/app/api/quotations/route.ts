@@ -6,6 +6,43 @@ import { QuotationFormData } from '../../../types/quotation';
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (id) {
+      const doc = await Quotation.findOne({ quotationNumber: id }).lean();
+      if (!doc) {
+        return NextResponse.json(
+          { success: false, error: `Quotation ${id} not found.` },
+          {
+            status: 404,
+            headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' },
+          }
+        );
+      }
+      const formatted = {
+        id: doc.quotationNumber,
+        quotationNumber: doc.quotationNumber,
+        date: doc.quotationDate,
+        buyerName: doc.buyerName,
+        buyerGstin: doc.buyerGstin || '',
+        totalWeightKg: doc.totalWeightKg,
+        subtotal: doc.subtotal,
+        taxAmount: doc.taxAmount,
+        grandTotal: doc.grandTotal,
+        lineItems: doc.lineItems,
+        pdfGeneratedAt: doc.createdAt,
+        formData: doc.formData
+      };
+      return NextResponse.json(
+        { success: true, quotation: formatted },
+        {
+          status: 200,
+          headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' },
+        }
+      );
+    }
+
     const list = await Quotation.find().sort({ createdAt: -1 }).lean();
     
     // Map list to match QuotationRecord interface with date and id fields
@@ -106,8 +143,7 @@ export async function POST(req: NextRequest) {
       taxAmount,
       grandTotal,
       lineItems: body.items,
-      formData: payloadWithFinalNumber,
-      createdAt: new Date()
+      formData: payloadWithFinalNumber
     };
 
     // MongoDB write operation wrapped in a quick try/catch
@@ -115,7 +151,10 @@ export async function POST(req: NextRequest) {
     try {
       savedDoc = await Quotation.findOneAndUpdate(
         { quotationNumber: finalQuotationNumber },
-        record,
+        {
+          $set: record,
+          $setOnInsert: { createdAt: new Date() }
+        },
         { upsert: true, new: true }
       );
     } catch (writeError: any) {

@@ -58,25 +58,188 @@ export default function Home() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
 
-  // Load PDF module on client-side mount
+  // State to track if we are in Edit Mode vs New Mode
+  const [isEditing, setIsEditing] = useState(false);
+
+  const computeNextQuotationNumber = (dbQuotations: any[], localQuotations: any[]) => {
+    const currentYear = new Date().getFullYear();
+    const allNumbers = new Set<string>();
+    dbQuotations.forEach(q => {
+      if (q.quotationNumber) allNumbers.add(q.quotationNumber);
+    });
+    localQuotations.forEach(q => {
+      if (q.quotationNumber) allNumbers.add(q.quotationNumber);
+    });
+    
+    const count = allNumbers.size;
+    
+    let maxSeq = 0;
+    allNumbers.forEach(num => {
+      const match = num.match(/^Q-(\d{4})-(\d+)$/);
+      if (match) {
+        const year = parseInt(match[1], 10);
+        const seq = parseInt(match[2], 10);
+        if (year === currentYear && seq > maxSeq) {
+          maxSeq = seq;
+        }
+      }
+    });
+    
+    const nextSeq = Math.max(count + 1, maxSeq + 1);
+    const padSeq = String(nextSeq).padStart(3, '0');
+    return `Q-${currentYear}-${padSeq}`;
+  };
+
+  const fetchNextId = async () => {
+    let dbQuotations: any[] = [];
+    try {
+      const res = await fetch('/api/quotations');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.quotations)) {
+          dbQuotations = data.quotations;
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching quotations for next ID:', err);
+    }
+
+    let localQuotations: any[] = [];
+    try {
+      const localQuotesStr = localStorage.getItem('jmk_offline_quotations');
+      if (localQuotesStr) {
+        localQuotations = JSON.parse(localQuotesStr);
+      }
+    } catch (err) {
+      console.error('Error loading offline quotations for next ID:', err);
+    }
+
+    const nextId = computeNextQuotationNumber(dbQuotations, localQuotations);
+    if (!isEditing) {
+      setQuotationNumber(nextId);
+    }
+    return nextId;
+  };
+
+  // Load PDF module on client-side mount & handle load/edit initialize
   useEffect(() => {
     import('@react-pdf/renderer').then((module) => {
       setPdfModule(module);
     });
+
+    const init = async () => {
+      let dbQuotations: any[] = [];
+      try {
+        const res = await fetch('/api/quotations');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.quotations)) {
+            dbQuotations = data.quotations;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch quotations on mount:', err);
+      }
+
+      let localQuotations: any[] = [];
+      try {
+        const localQuotesStr = localStorage.getItem('jmk_offline_quotations');
+        if (localQuotesStr) {
+          localQuotations = JSON.parse(localQuotesStr);
+        }
+      } catch (err) {
+        console.error('Failed to read local quotations on mount:', err);
+      }
+
+      let loadedFromEdit = false;
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const editId = params.get('edit');
+        if (editId) {
+          const found = dbQuotations.find(q => q.quotationNumber === editId) || 
+                        localQuotations.find(q => q.quotationNumber === editId);
+          if (found && found.formData) {
+            const fd = found.formData;
+            setQuotationNumber(found.quotationNumber);
+            setQuotationDate(fd.quotationDate || found.date || '');
+            setBuyer(fd.buyer || { name: '', address: '', gstin: '', phone: '', contactPerson: '' });
+            setItems(fd.items || found.lineItems || []);
+            setTaxType(fd.taxType || 'igst');
+            setDeliveryNote(fd.deliveryNote || '');
+            setModeTermsOfPayment(fd.modeTermsOfPayment || '');
+            setReferenceNo(fd.referenceNo || '');
+            setOtherReferences(fd.otherReferences || '');
+            setBuyerOrderNo(fd.buyerOrderNo || '');
+            setBuyerOrderDate(fd.buyerOrderDate || '');
+            setDispatchDocNo(fd.dispatchDocNo || '');
+            setDeliveryNoteDate(fd.deliveryNoteDate || '');
+            setDispatchedThrough(fd.dispatchedThrough || '');
+            setDestination(fd.destination || '');
+            setTermsOfDelivery(fd.termsOfDelivery || '');
+            setIsEditing(true);
+            loadedFromEdit = true;
+          }
+        }
+      }
+
+      if (!loadedFromEdit) {
+        const nextId = computeNextQuotationNumber(dbQuotations, localQuotations);
+        setQuotationNumber(nextId);
+        setIsEditing(false);
+      }
+    };
+
+    init();
   }, []);
 
-  const fetchNextId = async () => {
+  const handleCreateNewQuotation = async () => {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, '', '/');
+    }
+    setQuotationDate(new Date().toISOString().split('T')[0]);
+    setBuyer({ name: '', address: '', gstin: '', phone: '', contactPerson: '' });
+    setItems([]);
+    setTaxType('igst');
+    setDeliveryNote('');
+    setModeTermsOfPayment('');
+    setReferenceNo('');
+    setOtherReferences('');
+    setBuyerOrderNo('');
+    setBuyerOrderDate('');
+    setDispatchDocNo('');
+    setDeliveryNoteDate('');
+    setDispatchedThrough('');
+    setDestination('');
+    setTermsOfDelivery('');
+    setSaveStatus('idle');
+    setIsEditing(false);
+
+    // Refresh sequence ID with updated counts
+    let dbQuotations: any[] = [];
     try {
-      const res = await fetch('/api/quotations/next-id');
+      const res = await fetch('/api/quotations');
       if (res.ok) {
         const data = await res.json();
-        if (data.success && data.nextId) {
-          setQuotationNumber(data.nextId);
+        if (data.success && Array.isArray(data.quotations)) {
+          dbQuotations = data.quotations;
         }
       }
     } catch (err) {
-      console.error('Error fetching next quotation ID:', err);
+      console.error('Error fetching quotations for next ID:', err);
     }
+
+    let localQuotations: any[] = [];
+    try {
+      const localQuotesStr = localStorage.getItem('jmk_offline_quotations');
+      if (localQuotesStr) {
+        localQuotations = JSON.parse(localQuotesStr);
+      }
+    } catch (err) {
+      console.error('Error loading offline quotations for next ID:', err);
+    }
+
+    const nextId = computeNextQuotationNumber(dbQuotations, localQuotations);
+    setQuotationNumber(nextId);
   };
 
   // Pre-compile PDF in the background whenever data changes (debounced to avoid blocking main thread)
@@ -345,17 +508,15 @@ export default function Home() {
         } else {
           console.error('Background database save failed:', res.statusText);
         }
-        // Refresh next ID in the background
-        fetchNextId();
+        // Refresh next ID in the background if we were not in edit mode
+        if (!isEditing) {
+          fetchNextId();
+        }
       })
       .catch((err) => {
         console.error('Background database sync network error:', err);
       });
   };
-
-  useEffect(() => {
-    fetchNextId();
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -431,14 +592,27 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 bg-blue-600 rounded-full"></span>
             <span className="font-extrabold text-xs text-gray-700 uppercase tracking-wider">JMK Quotation System v2.1</span>
+            {isEditing && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-250 text-amber-800 text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                Editing Mode
+              </span>
+            )}
           </div>
-          <a 
-            href="/admin"
-            className="px-4 py-2 bg-blue-50 text-blue-705 text-blue-700 hover:bg-blue-100 font-bold text-xs rounded-lg border border-blue-200 flex items-center gap-1.5 transition-all active:scale-95"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Go to Admin Dashboard</span>
-          </a>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleCreateNewQuotation}
+              className="px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-xs rounded-lg border border-emerald-250 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+            >
+              <span>+ Create New Quotation</span>
+            </button>
+            <a 
+              href="/admin"
+              className="px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-xs rounded-lg border border-blue-200 flex items-center gap-1.5 transition-all active:scale-95"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Go to Admin Dashboard</span>
+            </a>
+          </div>
         </div>
         {/* Dynamic Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
